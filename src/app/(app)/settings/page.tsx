@@ -19,8 +19,7 @@ export default function SettingsPage() {
 
   // Placeholder for other user settings - can be made dynamic later
   const userSettings = {
-    // name: 'Demo User', // This will now be managed by fullName state
-    email: 'user@example.com',
+    email: 'user@example.com', // This will be read from localStorage in AppHeader
     currency: 'INR',
     notifications: {
       sms: false,
@@ -29,6 +28,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    // Dark Mode Initialization
     let initialDarkMode = false;
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme) {
@@ -43,22 +43,25 @@ export default function SettingsPage() {
       document.documentElement.classList.remove('dark');
     }
 
+    // Email Notifications Initialization
     const storedEmailNotifications = localStorage.getItem('emailNotificationsEnabled');
     if (storedEmailNotifications !== null) {
       setEmailNotificationsEnabled(JSON.parse(storedEmailNotifications));
     } else {
-      setEmailNotificationsEnabled(true); 
+      setEmailNotificationsEnabled(true); // Default to true
     }
 
+    // Full Name Initialization
     const storedName = localStorage.getItem('financeUserName');
     if (storedName) {
       setFullName(storedName);
     } else {
-      setFullName('Demo User'); // Default if not found
+      const emailName = localStorage.getItem('financeUserEmail')?.split('@')[0];
+      setFullName(emailName || 'Demo User'); // Default if not found
     }
-
   }, []); 
 
+  // Effect for Dark Mode and Email Notifications Persistence
   useEffect(() => {
     if (!isMounted) return; 
 
@@ -76,22 +79,24 @@ export default function SettingsPage() {
 
   const handleAccountInfoSave = () => {
     localStorage.setItem('financeUserName', fullName);
+    window.dispatchEvent(new CustomEvent('financeProfileUpdated')); // Dispatch event
     toast({
       title: "Account Updated",
       description: "Your name has been successfully updated.",
     });
-    // Potentially trigger a re-fetch or update in AppHeader if name is displayed there reactively
   };
 
   const handlePreferencesSave = () => {
-    // This button currently doesn't do anything as dark mode and email notifications
-    // are saved immediately on change via their useEffect.
-    // If other preferences were added that need explicit saving, they'd go here.
+    // Dark mode and email notifications are saved immediately on change via their useEffect.
+    // This button can be used for other preferences if added later.
     toast({
       title: "Preferences Saved",
       description: "Your preferences have been updated (if applicable).",
     });
   };
+  
+  const userDisplayEmail = isMounted ? localStorage.getItem('financeUserEmail') || userSettings.email : userSettings.email;
+
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -112,7 +117,7 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" defaultValue={userSettings.email} readOnly className="bg-muted/50 cursor-not-allowed" />
+              <Input id="email" type="email" value={userDisplayEmail} readOnly className="bg-muted/50 cursor-not-allowed" />
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <AlertCircle size={14} /> Email cannot be changed here.
               </p>
@@ -132,7 +137,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="currency">Preferred Currency</Label>
-            <Input id="currency" defaultValue={userSettings.currency} readOnly className="bg-muted/50 cursor-not-allowed" />
+            <Input id="currency" value={userSettings.currency} readOnly className="bg-muted/50 cursor-not-allowed" />
              <p className="text-xs text-muted-foreground">Currency setting is managed globally.</p>
           </div>
           
@@ -147,12 +152,14 @@ export default function SettingsPage() {
                   Enable or disable dark theme.
                 </span>
               </Label>
-              <Switch
-                id="dark-mode"
-                checked={darkMode}
-                onCheckedChange={setDarkMode}
-                aria-label="Toggle dark mode"
-              />
+              {isMounted && (
+                <Switch
+                  id="dark-mode"
+                  checked={darkMode}
+                  onCheckedChange={setDarkMode}
+                  aria-label="Toggle dark mode"
+                />
+              )}
             </div>
           </div>
           
@@ -168,12 +175,14 @@ export default function SettingsPage() {
                       Receive updates and alerts via email.
                     </span>
                 </Label>
-                <Switch
-                  id="email-notifications"
-                  checked={emailNotificationsEnabled}
-                  onCheckedChange={setEmailNotificationsEnabled}
-                  aria-label="Toggle email notifications"
-                />
+                {isMounted && (
+                  <Switch
+                    id="email-notifications"
+                    checked={emailNotificationsEnabled}
+                    onCheckedChange={setEmailNotificationsEnabled}
+                    aria-label="Toggle email notifications"
+                  />
+                )}
               </div>
               <div className="flex items-center justify-between p-3 border rounded-md">
                  <Label htmlFor="sms-notifications" className="flex flex-col space-y-1">
@@ -185,7 +194,6 @@ export default function SettingsPage() {
                 <Switch
                   id="sms-notifications"
                   checked={userSettings.notifications.sms}
-                  // onCheckedChange={(checked) => { /* Handle SMS notification change */ }}
                   aria-label="Toggle SMS notifications"
                   disabled 
                 />

@@ -1,7 +1,7 @@
 
 "use client";
 import type { FC } from 'react';
-import React from 'react'; // Added this line
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import { Landmark, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSidebar } from '@/components/ui/sidebar'; // Import useSidebar
-import { useRouter } // Import useRouter
+import { useSidebar } from '@/components/ui/sidebar';
+import { useRouter }
 from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,16 +31,29 @@ const getPageTitle = (pathname: string): string => {
 export const AppHeader: FC = () => {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
-  const { toggleSidebar, isMobile } = useSidebar(); // Use toggleSidebar from context
+  const { toggleSidebar, isMobile } = useSidebar();
   const router = useRouter();
   const { toast } = useToast();
   const [userName, setUserName] = React.useState<string | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setUserName(localStorage.getItem('financeUserName'));
-    setUserEmail(localStorage.getItem('financeUserEmail'));
-  }, []);
+    const handleProfileUpdate = () => {
+      setUserName(localStorage.getItem('financeUserName'));
+      setUserEmail(localStorage.getItem('financeUserEmail'));
+    };
+
+    // Initial load
+    handleProfileUpdate();
+
+    // Listen for custom event
+    window.addEventListener('financeProfileUpdated', handleProfileUpdate);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('financeProfileUpdated', handleProfileUpdate);
+    };
+  }, []); // Empty dependency array is correct for setting up and tearing down event listeners.
 
   const handleLogout = () => {
     localStorage.removeItem('financeUserToken');
