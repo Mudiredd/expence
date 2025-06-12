@@ -1,3 +1,4 @@
+
 import type { ReactNode } from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { AppSidebarContent } from '@/components/layout/AppSidebarContent';
@@ -17,7 +18,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <SidebarInset>
             <AppHeader />
             <div className="p-4 sm:p-6 lg:p-8 bg-background flex-1 overflow-auto"> {/* Content padding and ensure it fills space */}
-              {children}
+              <div className="w-full max-w-7xl mx-auto"> {/* Added max-width and centering */}
+                {children}
+              </div>
             </div>
           </SidebarInset>
         </SidebarProvider>
