@@ -4,14 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch'; // Assuming you have a Switch component
+import { Switch } from '@/components/ui/switch'; 
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Save } from 'lucide-react';
-
-// Removed metadata export as it's not allowed in client components
+import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
-  // In a real app, these would come from context/state management or API
+  const [isMounted, setIsMounted] = useState(false);
+  // Initialize darkMode state. Default to false, actual value set in useEffect.
+  // This initial false matches the server-rendered state as layout.tsx no longer has 'dark' class.
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Placeholder for other user settings - can be made dynamic later
   const userSettings = {
     name: 'Demo User',
     email: 'user@example.com',
@@ -20,8 +24,39 @@ export default function SettingsPage() {
       email: true,
       sms: false,
     },
-    darkMode: false, // Or detect from system/user preference
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+    let initialDarkMode = false;
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme) {
+      initialDarkMode = storedTheme === 'dark';
+    } else {
+      // Check system preference if no theme is stored
+      initialDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    setDarkMode(initialDarkMode);
+
+    // Apply initial theme to the document immediately after determining it
+    if (initialDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []); // Empty dependency array ensures this runs once on mount
+
+  useEffect(() => {
+    if (!isMounted) return; // Don't run on server or before initial mount effect has run
+
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode, isMounted]); // Re-run when darkMode state or isMounted changes
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -75,8 +110,8 @@ export default function SettingsPage() {
               </Label>
               <Switch
                 id="dark-mode"
-                checked={userSettings.darkMode}
-                // onCheckedChange={(checked) => { /* Handle theme change */ }}
+                checked={darkMode}
+                onCheckedChange={setDarkMode}
                 aria-label="Toggle dark mode"
               />
             </div>
@@ -135,3 +170,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
