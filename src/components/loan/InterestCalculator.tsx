@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calculator, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,6 +19,7 @@ export const InterestCalculator: FC = () => {
   const [principal, setPrincipal] = useState<string>('');
   const [rate, setRate] = useState<string>('');
   const [term, setTerm] = useState<string>(''); // Term in years
+  const [ratePeriod, setRatePeriod] = useState<string>('year'); // 'year' or 'month'
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
@@ -27,7 +29,7 @@ export const InterestCalculator: FC = () => {
     setResult(null);
 
     const p = parseFloat(principal);
-    const r = parseFloat(rate); // Annual rate in percentage
+    let r = parseFloat(rate); // Interest rate in percentage
     const t = parseFloat(term); // Term in years
 
     if (isNaN(p) || p <= 0) {
@@ -36,7 +38,7 @@ export const InterestCalculator: FC = () => {
       return;
     }
     if (isNaN(r) || r <= 0) {
-      toast({ title: "Invalid Input", description: "Annual interest rate must be a positive number.", variant: "destructive" });
+      toast({ title: "Invalid Input", description: "Interest rate must be a positive number.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -46,9 +48,12 @@ export const InterestCalculator: FC = () => {
       return;
     }
 
+    // Convert monthly rate to annual rate if needed
+    const annualRatePercent = ratePeriod === 'month' ? r * 12 : r;
+
     // Simulate calculation delay
     setTimeout(() => {
-      const annualRateDecimal = r / 100;
+      const annualRateDecimal = annualRatePercent / 100;
       const simpleInterest = p * annualRateDecimal * t;
       const totalAmount = p + simpleInterest;
       const monthlyPayment = totalAmount / (t * 12);
@@ -67,6 +72,7 @@ export const InterestCalculator: FC = () => {
     setPrincipal('');
     setRate('');
     setTerm('');
+    setRatePeriod('year');
     setResult(null);
     toast({ title: "Calculator Reset", description: "Input fields have been cleared." });
   };
@@ -87,6 +93,7 @@ export const InterestCalculator: FC = () => {
             <Input
               id="principal"
               type="number"
+              step="0.01"
               placeholder="e.g., 100000"
               value={principal}
               onChange={(e) => setPrincipal(e.target.value)}
@@ -94,21 +101,34 @@ export const InterestCalculator: FC = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rate">Annual Interest Rate (%)</Label>
-            <Input
-              id="rate"
-              type="number"
-              placeholder="e.g., 8.5"
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-              className="text-base"
-            />
+            <Label htmlFor="rate">Interest Rate (%)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="rate"
+                type="number"
+                step="0.01"
+                placeholder="e.g., 8.5"
+                value={rate}
+                onChange={(e) => setRate(e.target.value)}
+                className="text-base"
+              />
+              <Select value={ratePeriod} onValueChange={setRatePeriod}>
+                <SelectTrigger className="w-[120px] text-base">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">Per Year</SelectItem>
+                  <SelectItem value="month">Per Month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="term">Loan Term (Years)</Label>
             <Input
               id="term"
               type="number"
+              step="0.1" // Allow for terms like 1.5 years
               placeholder="e.g., 5"
               value={term}
               onChange={(e) => setTerm(e.target.value)}

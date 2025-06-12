@@ -25,6 +25,7 @@ const compoundingFrequencies = [
 export const CompoundInterestCalculator: FC = () => {
   const [principal, setPrincipal] = useState<string>('');
   const [rate, setRate] = useState<string>('');
+  const [ratePeriod, setRatePeriod] = useState<string>('year'); // 'year' or 'month'
   const [term, setTerm] = useState<string>(''); // Term in years
   const [compoundingFrequency, setCompoundingFrequency] = useState<string>(compoundingFrequencies[0].value.toString());
   const [result, setResult] = useState<CompoundCalculationResult | null>(null);
@@ -36,17 +37,17 @@ export const CompoundInterestCalculator: FC = () => {
     setResult(null);
 
     const p = parseFloat(principal);
-    const r = parseFloat(rate); // Annual rate in percentage
+    let r_input = parseFloat(rate); // Annual rate in percentage
     const t = parseFloat(term); // Term in years
-    const n = parseInt(compoundingFrequency); // Compounding periods per year
+    const n_comp_freq = parseInt(compoundingFrequency); // Compounding periods per year
 
     if (isNaN(p) || p <= 0) {
       toast({ title: "Invalid Input", description: "Principal amount must be a positive number.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
-    if (isNaN(r) || r <= 0) {
-      toast({ title: "Invalid Input", description: "Annual interest rate must be a positive number.", variant: "destructive" });
+    if (isNaN(r_input) || r_input <= 0) {
+      toast({ title: "Invalid Input", description: "Interest rate must be a positive number.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -55,16 +56,20 @@ export const CompoundInterestCalculator: FC = () => {
       setIsLoading(false);
       return;
     }
-    if (isNaN(n) || n <= 0) {
+    if (isNaN(n_comp_freq) || n_comp_freq <= 0) {
       toast({ title: "Invalid Input", description: "Please select a valid compounding frequency.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
 
+    // Convert monthly rate to a nominal annual rate if needed for the formula A = P(1 + r/n)^(nt)
+    // where 'r' is the nominal annual rate and 'n' is compounding frequency per year.
+    const nominalAnnualRatePercent = ratePeriod === 'month' ? r_input * 12 : r_input;
+    const nominalAnnualRateDecimal = nominalAnnualRatePercent / 100;
+
     // Simulate calculation delay
     setTimeout(() => {
-      const annualRateDecimal = r / 100;
-      const totalAmount = p * Math.pow((1 + annualRateDecimal / n), n * t);
+      const totalAmount = p * Math.pow((1 + nominalAnnualRateDecimal / n_comp_freq), n_comp_freq * t);
       const compoundInterest = totalAmount - p;
 
       setResult({
@@ -79,6 +84,7 @@ export const CompoundInterestCalculator: FC = () => {
   const handleReset = () => {
     setPrincipal('');
     setRate('');
+    setRatePeriod('year');
     setTerm('');
     setCompoundingFrequency(compoundingFrequencies[0].value.toString());
     setResult(null);
@@ -109,23 +115,34 @@ export const CompoundInterestCalculator: FC = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="compoundRate">Annual Interest Rate (%)</Label>
-            <Input
-              id="compoundRate"
-              type="number"
-              step="0.01"
-              placeholder="e.g., 8.5"
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-              className="text-base"
-            />
+            <Label htmlFor="compoundRate">Interest Rate (%)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="compoundRate"
+                type="number"
+                step="0.01"
+                placeholder="e.g., 8.5"
+                value={rate}
+                onChange={(e) => setRate(e.target.value)}
+                className="text-base flex-grow"
+              />
+              <Select value={ratePeriod} onValueChange={setRatePeriod}>
+                <SelectTrigger className="w-[120px] text-base">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">Per Year</SelectItem>
+                  <SelectItem value="month">Per Month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="compoundTerm">Loan Term (Years)</Label>
             <Input
               id="compoundTerm"
               type="number"
-              step="0.5"
+              step="0.1"
               placeholder="e.g., 5"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
