@@ -1,6 +1,7 @@
 
 "use client";
 import { InterestCalculator } from '@/components/loan/InterestCalculator';
+import { CompoundInterestCalculator } from '@/components/loan/CompoundInterestCalculator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Banknote } from 'lucide-react';
 
@@ -12,11 +13,15 @@ export default function LoanPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-headline flex items-center">
           <Banknote size={32} className="mr-3 text-primary" />
-          Loan Management & Interest Calculator
+          Loan Management & Interest Calculators
         </h1>
       </div>
 
       <InterestCalculator />
+
+      <div className="mt-8">
+        <CompoundInterestCalculator />
+      </div>
 
       <Card className="shadow-lg mt-8">
         <CardHeader>
