@@ -1,4 +1,6 @@
 
+'use client'; // Added to mark as Client Component
+
 import type { ReactNode } from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { AppSidebarContent } from '@/components/layout/AppSidebarContent';
