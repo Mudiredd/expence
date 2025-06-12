@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useTransactions } from '@/contexts/TransactionContext';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, CheckCircle, CircleDollarSign } from 'lucide-react';
+import { CalendarIcon, CheckCircle, IndianRupee } from 'lucide-react'; // Changed CircleDollarSign to IndianRupee
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -81,7 +81,7 @@ export const TransactionForm: FC = () => {
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
       <CardHeader>
         <div className="flex items-center space-x-2 mb-2">
-            <CircleDollarSign className="h-8 w-8 text-primary" />
+            <IndianRupee className="h-8 w-8 text-primary" /> {/* Changed Icon Here */}
             <CardTitle className="text-2xl font-headline">Record Transaction</CardTitle>
         </div>
         <CardDescription>Add a new income or expense to your records.</CardDescription>
