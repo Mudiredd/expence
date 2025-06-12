@@ -26,6 +26,7 @@ const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/transactions')) return 'Transaction History';
   if (pathname.startsWith('/reports')) return 'Reports & Analytics';
   if (pathname.startsWith('/goals')) return 'Financial Goals';
+  if (pathname.startsWith('/loan')) return 'Loan Management';
   if (pathname.startsWith('/settings')) return 'Settings';
   return 'Vishnu Finance Tracker';
 };
