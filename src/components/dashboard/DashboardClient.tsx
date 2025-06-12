@@ -100,15 +100,15 @@ const DashboardClient: FC = () => {
 
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard title="Total Income" value={summary.income} icon={<ArrowUpCircle size={24} />} isLoading={transactionsLoading} valueClassName="text-green-600 dark:text-green-500" />
-        <SummaryCard title="Total Expenses" value={summary.expenses} icon={<ArrowDownCircle size={24} />} isLoading={transactionsLoading} valueClassName="text-red-600 dark:text-red-500" />
-        <SummaryCard title="Balance" value={summary.balance} icon={<Scale size={24} />} isLoading={transactionsLoading} valueClassName={summary.balance >= 0 ? 'text-blue-600 dark:text-blue-500' : 'text-orange-600 dark:text-orange-500'} />
+        <SummaryCard className="animate-fadeIn" title="Total Income" value={summary.income} icon={<ArrowUpCircle size={24} />} isLoading={transactionsLoading} valueClassName="text-green-600 dark:text-green-500" />
+        <SummaryCard className="animate-fadeIn" style={{ animationDelay: '100ms' }} title="Total Expenses" value={summary.expenses} icon={<ArrowDownCircle size={24} />} isLoading={transactionsLoading} valueClassName="text-red-600 dark:text-red-500" />
+        <SummaryCard className="animate-fadeIn" style={{ animationDelay: '200ms' }} title="Balance" value={summary.balance} icon={<Scale size={24} />} isLoading={transactionsLoading} valueClassName={summary.balance >= 0 ? 'text-blue-600 dark:text-blue-500' : 'text-orange-600 dark:text-orange-500'} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-lg">
+        <Card className="shadow-lg animate-fadeIn" style={{ animationDelay: '300ms' }}>
           <CardHeader>
             <CardTitle className="font-headline">Monthly Overview (Last 6 Months)</CardTitle>
             <CardDescription>Income vs. Expenses trends.</CardDescription>
@@ -132,7 +132,7 @@ const DashboardClient: FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-lg animate-fadeIn" style={{ animationDelay: '400ms' }}>
           <CardHeader>
             <CardTitle className="font-headline">Expenses by Category (Current Month)</CardTitle>
             <CardDescription>Breakdown of your spending.</CardDescription>
@@ -168,15 +168,6 @@ const DashboardClient: FC = () => {
           </CardContent>
         </Card>
       </div>
-      <style jsx global>{`
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 };

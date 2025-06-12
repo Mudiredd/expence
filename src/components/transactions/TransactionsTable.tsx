@@ -243,16 +243,6 @@ export const TransactionsTable: FC = () => {
           </TableBody>
         </Table>
       </div>
-      <style jsx global>{`
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 };
-

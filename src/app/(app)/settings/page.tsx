@@ -33,7 +33,7 @@ export default function SettingsPage() {
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme) {
       initialDarkMode = storedTheme === 'dark';
-    } else {
+    } else if (typeof window !== 'undefined') {
       initialDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     setDarkMode(initialDarkMode);
@@ -205,15 +205,6 @@ export default function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
-       <style jsx global>{`
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
