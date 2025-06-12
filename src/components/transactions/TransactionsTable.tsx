@@ -29,6 +29,8 @@ import { DateRange } from "react-day-picker"
 type SortKey = keyof Transaction | '';
 type SortOrder = 'asc' | 'desc';
 
+const ALL_CATEGORIES_VALUE = "_all_";
+
 export const TransactionsTable: FC = () => {
   const { transactions, loading } = useTransactions();
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,13 +145,22 @@ export const TransactionsTable: FC = () => {
             <SelectItem value="expense">Expense</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
+        <Select
+          value={filterCategory || ALL_CATEGORIES_VALUE} // Ensure select shows "All Categories" if filterCategory is ""
+          onValueChange={(value) => {
+            if (value === ALL_CATEGORIES_VALUE) {
+              setFilterCategory('');
+            } else {
+              setFilterCategory(value);
+            }
+          }}
+        >
           <SelectTrigger className="w-full md:w-[180px]">
              <Filter className="mr-2 h-4 w-4 text-muted-foreground"/>
             <SelectValue placeholder="Filter by category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
             {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -244,3 +255,4 @@ export const TransactionsTable: FC = () => {
     </div>
   );
 };
+
