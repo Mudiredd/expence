@@ -64,11 +64,10 @@ export const AppSidebarContent: FC = () => {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href}>
+              <Link href={item.href} onClick={handleLinkClick}>
                 <SidebarMenuButton
                   isActive={pathname.startsWith(item.href)}
                   tooltip={{ children: item.label, className: "font-body" }}
-                  onClick={handleLinkClick}
                 >
                   <item.icon />
                   <span>{item.label}</span>
@@ -82,11 +81,15 @@ export const AppSidebarContent: FC = () => {
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
          <SidebarMenu>
            <SidebarMenuItem>
-             {/* TODO: Make settings link functional or a Link component */}
-             <SidebarMenuButton tooltip={{ children: "Settings", className: "font-body" }} onClick={handleLinkClick}>
-                <Settings />
-                <span>Settings</span>
-             </SidebarMenuButton>
+             <Link href="/settings" onClick={handleLinkClick}>
+               <SidebarMenuButton 
+                  isActive={pathname.startsWith('/settings')}
+                  tooltip={{ children: "Settings", className: "font-body" }}
+                >
+                  <Settings />
+                  <span>Settings</span>
+               </SidebarMenuButton>
+             </Link>
            </SidebarMenuItem>
            <SidebarMenuItem>
              <SidebarMenuButton
