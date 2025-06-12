@@ -1,3 +1,4 @@
+
 "use client";
 import type { FC } from 'react';
 import { useState } from 'react';
@@ -27,6 +28,9 @@ const LoginPage: FC = () => {
       if (email === 'user@example.com' && password === 'password123') {
         localStorage.setItem('financeUserToken', 'dummy-auth-token');
         localStorage.setItem('financeUserEmail', email);
+        // Extract username part from email (e.g., "user" from "user@example.com")
+        const userNameFromEmail = email.split('@')[0];
+        localStorage.setItem('financeUserName', userNameFromEmail);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
