@@ -43,7 +43,10 @@ export const TransactionForm: FC = () => {
     resolver: zodResolver(transactionFormSchema),
     defaultValues: {
       type: 'expense',
+      category: '', // Initialize category
+      amount: '' as unknown as number, // Initialize amount for controlled input, Zod will coerce
       date: new Date(),
+      description: '', // Initialize description
     }
   });
 
@@ -160,23 +163,23 @@ export const TransactionForm: FC = () => {
 
             <div className="space-y-2">
               <Label htmlFor="amount">Amount (INR)</Label>
-              <Input 
-                id="amount" 
-                type="number" 
-                step="0.01" 
-                placeholder="0.00" 
-                {...register('amount')} 
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                {...register('amount')}
               />
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea 
-              id="description" 
-              placeholder="e.g., Groceries for the week" 
-              {...register('description')} 
+            <Textarea
+              id="description"
+              placeholder="e.g., Groceries for the week"
+              {...register('description')}
             />
             {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
           </div>
