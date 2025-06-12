@@ -37,7 +37,6 @@ export const AppHeader: FC = () => {
   const { toast } = useToast();
   const [userName, setUserName] = React.useState<string | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
 
   const getUserInitials = React.useCallback(() => {
     if (userName) {
@@ -53,7 +52,6 @@ export const AppHeader: FC = () => {
     const handleProfileUpdate = () => {
       setUserName(localStorage.getItem('financeUserName'));
       setUserEmail(localStorage.getItem('financeUserEmail'));
-      setAvatarUrl(localStorage.getItem('financeUserAvatarUrl'));
     };
 
     // Initial load
@@ -72,7 +70,7 @@ export const AppHeader: FC = () => {
     localStorage.removeItem('financeUserToken');
     localStorage.removeItem('financeUserEmail');
     localStorage.removeItem('financeUserName');
-    localStorage.removeItem('financeUserAvatarUrl');
+    // No longer need to remove avatar URL as it's not being used
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
     router.push('/login');
   };
@@ -107,7 +105,7 @@ export const AppHeader: FC = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={avatarUrl || undefined} alt="User avatar trigger" data-ai-hint="user avatar" />
+              <AvatarImage src={undefined} alt="User avatar trigger" />
               <AvatarFallback>{getUserInitials()}</AvatarFallback>
             </Avatar>
           </Button>
@@ -116,7 +114,7 @@ export const AppHeader: FC = () => {
           <DropdownMenuLabel className="font-normal">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={avatarUrl || undefined} alt="User avatar menu" data-ai-hint="user avatar small" />
+                <AvatarImage src={undefined} alt="User avatar menu" />
                 <AvatarFallback>{getUserInitials()}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col space-y-1">
