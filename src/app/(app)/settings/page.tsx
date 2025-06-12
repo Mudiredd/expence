@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Save } from 'lucide-react';
-import { useState, useEffect, type ChangeEvent } from 'react';
+import { AlertCircle, Save, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,16 @@ export default function SettingsPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [fullName, setFullName] = useState('');
+
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [isPasswordChanging, setIsPasswordChanging] = useState(false);
+
 
   // Placeholder for other user settings - can be made dynamic later
   const userSettings = {
@@ -94,6 +104,59 @@ export default function SettingsPage() {
       title: "Preferences Saved",
       description: "Your preferences have been updated (if applicable).",
     });
+  };
+
+  const handleChangePassword = (e: FormEvent) => {
+    e.preventDefault();
+    setIsPasswordChanging(true);
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      toast({
+        title: "Error",
+        description: "Please fill in all password fields.",
+        variant: "destructive",
+      });
+      setIsPasswordChanging(false);
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match.",
+        variant: "destructive",
+      });
+      setIsPasswordChanging(false);
+      return;
+    }
+
+    // Prototype: Check against the hardcoded password for 'user@example.com'
+    const DEMO_CURRENT_PASSWORD = "password123";
+    const storedUserPassword = localStorage.getItem('financeUserPassword');
+    const actualCurrentPassword = storedUserPassword || DEMO_CURRENT_PASSWORD;
+
+
+    if (currentPassword !== actualCurrentPassword) {
+      toast({
+        title: "Error",
+        description: "Incorrect current password.",
+        variant: "destructive",
+      });
+      setIsPasswordChanging(false);
+      return;
+    }
+    
+    // Prototype: "Store" the new password. In a real app, this would be a secure backend call.
+    localStorage.setItem('financeUserPassword', newPassword);
+
+    toast({
+      title: "Password Changed",
+      description: "Your password has been successfully updated.",
+    });
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setIsPasswordChanging(false);
   };
   
   const userDisplayEmail = isMounted ? localStorage.getItem('financeUserEmail') || userSettings.email : userSettings.email;
@@ -206,6 +269,94 @@ export default function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-headline">Change Password</CardTitle>
+          <CardDescription>Update your account password.
+            <br/>
+            <span className="text-xs text-muted-foreground">(For demo user: current password is 'password123')</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangePassword} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current Password</Label>
+              <div className="relative">
+                <Input
+                  id="current-password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                >
+                  {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <span className="sr-only">{showCurrentPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+               <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <span className="sr-only">{showNewPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirm-new-password"
+                  type={showConfirmNewPassword ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                >
+                  {showConfirmNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <span className="sr-only">{showConfirmNewPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
+              </div>
+            </div>
+            <Button type="submit" className="mt-2" disabled={isPasswordChanging}>
+              <KeyRound size={18} className="mr-2" /> 
+              {isPasswordChanging ? 'Changing...' : 'Change Password'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
