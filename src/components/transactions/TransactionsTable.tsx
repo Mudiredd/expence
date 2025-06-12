@@ -1,3 +1,4 @@
+
 "use client";
 import type { FC } from 'react';
 import { useState, useMemo, useEffect } from 'react';
@@ -212,7 +213,7 @@ export const TransactionsTable: FC = () => {
                   </TableCell>
                   <TableCell>{t.category}</TableCell>
                   <TableCell className={`font-semibold ${t.type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-                    {t.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                    {t.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                   </TableCell>
                   <TableCell className="text-muted-foreground max-w-xs truncate">{t.description || '-'}</TableCell>
                   {/* <TableCell>

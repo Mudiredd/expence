@@ -1,3 +1,4 @@
+
 "use client";
 import type { FC } from 'react';
 import { useMemo } from 'react';
@@ -78,11 +79,11 @@ const ReportsClient: FC = () => {
               <BarChart data={monthlySummaryData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                 <XAxis dataKey="month" className="text-xs"/>
-                <YAxis className="text-xs" tickFormatter={(value) => `$${value/1000}k`} />
+                <YAxis className="text-xs" tickFormatter={(value) => `₹${value/1000}k`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)'}}
                   labelClassName="font-semibold"
-                  formatter={(value: number) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                  formatter={(value: number) => value.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                 />
                 <Legend wrapperStyle={{fontSize: "0.875rem"}} />
                 <Bar dataKey="income" name="Income" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
@@ -120,7 +121,7 @@ const ReportsClient: FC = () => {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)'}}
-                  formatter={(value: number, name: string) => [value.toLocaleString('en-US', { style: 'currency', currency: 'USD' }), name]}
+                  formatter={(value: number, name: string) => [value.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }), name]}
                 />
                 <Legend wrapperStyle={{fontSize: "0.875rem"}} />
               </PieChart>

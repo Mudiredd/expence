@@ -1,3 +1,4 @@
+
 "use client";
 import type { FC } from 'react';
 import { useState } from 'react';
@@ -57,7 +58,7 @@ export const TransactionForm: FC = () => {
       });
       toast({
         title: "Transaction Added",
-        description: `${data.type === 'income' ? 'Income' : 'Expense'} of ${data.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} recorded.`,
+        description: `${data.type === 'income' ? 'Income' : 'Expense'} of ${data.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} recorded.`,
         action: <CheckCircle className="text-green-500" />,
       });
       reset(); // Reset form after successful submission
@@ -158,7 +159,7 @@ export const TransactionForm: FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount (USD)</Label>
+              <Label htmlFor="amount">Amount (INR)</Label>
               <Input 
                 id="amount" 
                 type="number" 

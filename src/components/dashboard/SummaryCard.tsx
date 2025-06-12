@@ -1,3 +1,4 @@
+
 "use client";
 import type { FC, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +26,7 @@ export const SummaryCard: FC<SummaryCardProps> = ({ title, value, icon, isLoadin
         {isLoading ? (
           <Skeleton className={`h-8 w-3/4 ${valueClassName || ''}`} />
         ) : (
-          <div className={`text-2xl font-bold ${valueClassName || ''}`}>{typeof value === 'number' ? value.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : value}</div>
+          <div className={`text-2xl font-bold ${valueClassName || ''}`}>{typeof value === 'number' ? value.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) : value}</div>
         )}
         {/* Optional: Add a small description or percentage change here */}
       </CardContent>
