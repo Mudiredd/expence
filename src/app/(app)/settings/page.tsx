@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+"use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,9 +8,7 @@ import { Switch } from '@/components/ui/switch'; // Assuming you have a Switch c
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Save } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'Settings | Vishnu Finance Tracker',
-};
+// Removed metadata export as it's not allowed in client components
 
 export default function SettingsPage() {
   // In a real app, these would come from context/state management or API
