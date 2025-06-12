@@ -3,7 +3,7 @@
 import type { FC } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Landmark, LayoutDashboard, PlusCircle, List, BarChart3, LogOut, Settings, UserCircle } from 'lucide-react';
+import { Landmark, LayoutDashboard, PlusCircle, List, BarChart3, LogOut, Settings } from 'lucide-react';
 import {
   SidebarHeader,
   SidebarContent,
@@ -11,11 +11,11 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,15 +28,18 @@ export const AppSidebarContent: FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { state, isMobile, setOpenMobile } = useSidebar(); // Get sidebar state
+  const { state, isMobile, setOpenMobile } = useSidebar();
 
-  const handleLogout = () => {
-    localStorage.removeItem('financeUserToken');
-    localStorage.removeItem('financeUserEmail');
-    localStorage.removeItem('financeUserName');
-    toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    if (isMobile) setOpenMobile(false);
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
+      if (isMobile) setOpenMobile(false);
+      router.push('/login');
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({ title: "Logout Failed", description: "Could not log out. Please try again.", variant: "destructive" });
+    }
   };
 
   const handleLinkClick = () => {

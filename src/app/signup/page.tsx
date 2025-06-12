@@ -1,3 +1,4 @@
+
 "use client";
 import type { FC } from 'react';
 import { useState } from 'react';
@@ -8,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Landmark, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Eye, EyeOff } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 const SignupPage: FC = () => {
   const router = useRouter();
@@ -21,7 +24,7 @@ const SignupPage: FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       toast({
@@ -32,20 +35,37 @@ const SignupPage: FC = () => {
       return;
     }
     setIsLoading(true);
-    // Simulate API call for signup
-    setTimeout(() => {
-      // For demo, we assume signup is successful and log the user in.
-      // In a real app, you'd create user, then potentially redirect to login or auto-login.
-      localStorage.setItem('financeUserToken', 'dummy-auth-token-signup'); // Simulate token
-      localStorage.setItem('financeUserEmail', email);
-      localStorage.setItem('financeUserName', name);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Update user's profile with display name
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, {
+          displayName: name,
+        });
+      }
       toast({
         title: "Signup Successful",
         description: "Your account has been created. Welcome!",
       });
       router.push('/dashboard'); // Redirect to dashboard after signup
+    } catch (error: any) {
+      console.error("Firebase signup error:", error);
+      let errorMessage = "Signup failed. Please try again.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email address is already in use.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. It should be at least 6 characters.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Please enter a valid email address.";
+      }
+      toast({
+        title: "Signup Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

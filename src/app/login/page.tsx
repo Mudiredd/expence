@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Landmark } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const LoginPage: FC = () => {
   const router = useRouter();
@@ -19,32 +21,33 @@ const LoginPage: FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      if (email === 'user@example.com' && password === 'password123') {
-        localStorage.setItem('financeUserToken', 'dummy-auth-token');
-        localStorage.setItem('financeUserEmail', email);
-        // Extract username part from email (e.g., "user" from "user@example.com")
-        const userNameFromEmail = email.split('@')[0];
-        localStorage.setItem('financeUserName', userNameFromEmail);
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-        });
-        router.push('/dashboard');
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid email or password.",
-          variant: "destructive",
-        });
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error("Firebase login error:", error);
+      let errorMessage = "Login failed. Please check your credentials.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Please enter a valid email address.";
       }
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -64,7 +67,7 @@ const LoginPage: FC = () => {
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="user@example.com" 
+                placeholder="you@example.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 

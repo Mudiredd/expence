@@ -6,40 +6,36 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Save, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Save, KeyRound } from 'lucide-react';
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import { updateProfile, onAuthStateChanged, type User } from 'firebase/auth';
 
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [fullName, setFullName] = useState('');
+  const [isSavingAccountInfo, setIsSavingAccountInfo] = useState(false);
 
-  // Password change states
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
-  const [isPasswordChanging, setIsPasswordChanging] = useState(false);
-
-
-  // Placeholder for other user settings - can be made dynamic later
-  const userSettings = {
-    email: 'user@example.com', // This will be read from localStorage in AppHeader
-    currency: 'INR',
-    notifications: {
-      sms: false,
-    },
-  };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (user) {
+        setFullName(user.displayName || '');
+      } else {
+        setFullName('');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
-    // Dark Mode Initialization
     let initialDarkMode = false;
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme) {
@@ -48,36 +44,22 @@ export default function SettingsPage() {
       initialDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     setDarkMode(initialDarkMode);
-    // Apply theme immediately based on initialDarkMode
     if (initialDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
 
-    // Email Notifications Initialization
     const storedEmailNotifications = localStorage.getItem('emailNotificationsEnabled');
     if (storedEmailNotifications !== null) {
       setEmailNotificationsEnabled(JSON.parse(storedEmailNotifications));
     } else {
-      setEmailNotificationsEnabled(true); // Default to true
+      setEmailNotificationsEnabled(true); 
     }
-
-    // Full Name Initialization
-    const storedName = localStorage.getItem('financeUserName');
-    if (storedName) {
-      setFullName(storedName);
-    } else {
-      const emailName = localStorage.getItem('financeUserEmail')?.split('@')[0];
-      setFullName(emailName || 'Demo User'); // Default if not found
-    }
-
   }, []);
 
-  // Effect for Dark Mode and Email Notifications Persistence
   useEffect(() => {
     if (!isMounted) return;
-
     if (darkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -85,82 +67,43 @@ export default function SettingsPage() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
-    
     localStorage.setItem('emailNotificationsEnabled', JSON.stringify(emailNotificationsEnabled));
-
   }, [darkMode, emailNotificationsEnabled, isMounted]);
 
-  const handleAccountInfoSave = () => {
-    localStorage.setItem('financeUserName', fullName);
-    window.dispatchEvent(new CustomEvent('financeProfileUpdated')); // Dispatch event
-    toast({
-      title: "Account Updated",
-      description: "Your account details have been successfully updated.",
-    });
+  const handleAccountInfoSave = async () => {
+    if (!currentUser) {
+      toast({ title: "Error", description: "You must be logged in to update your profile.", variant: "destructive" });
+      return;
+    }
+    setIsSavingAccountInfo(true);
+    try {
+      await updateProfile(currentUser, { displayName: fullName });
+      // Dispatch event so AppHeader can update if needed, though onAuthStateChanged should also cover it.
+      window.dispatchEvent(new CustomEvent('financeProfileUpdated'));
+      toast({
+        title: "Account Updated",
+        description: "Your account details have been successfully updated.",
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update account details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingAccountInfo(false);
+    }
   };
 
   const handlePreferencesSave = () => {
     toast({
       title: "Preferences Saved",
-      description: "Your preferences have been updated (if applicable).",
+      description: "Your preferences have been updated.",
     });
-  };
-
-  const handleChangePassword = (e: FormEvent) => {
-    e.preventDefault();
-    setIsPasswordChanging(true);
-
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      toast({
-        title: "Error",
-        description: "Please fill in all password fields.",
-        variant: "destructive",
-      });
-      setIsPasswordChanging(false);
-      return;
-    }
-
-    if (newPassword !== confirmNewPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match.",
-        variant: "destructive",
-      });
-      setIsPasswordChanging(false);
-      return;
-    }
-
-    // Prototype: Check against the hardcoded password for 'user@example.com'
-    const DEMO_CURRENT_PASSWORD = "password123";
-    const storedUserPassword = localStorage.getItem('financeUserPassword');
-    const actualCurrentPassword = storedUserPassword || DEMO_CURRENT_PASSWORD;
-
-
-    if (currentPassword !== actualCurrentPassword) {
-      toast({
-        title: "Error",
-        description: "Incorrect current password.",
-        variant: "destructive",
-      });
-      setIsPasswordChanging(false);
-      return;
-    }
-    
-    // Prototype: "Store" the new password. In a real app, this would be a secure backend call.
-    localStorage.setItem('financeUserPassword', newPassword);
-
-    toast({
-      title: "Password Changed",
-      description: "Your password has been successfully updated.",
-    });
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmNewPassword('');
-    setIsPasswordChanging(false);
   };
   
-  const userDisplayEmail = isMounted ? localStorage.getItem('financeUserEmail') || userSettings.email : userSettings.email;
-
+  const userDisplayEmail = currentUser?.email || 'user@example.com';
 
   return (
     <div className="space-y-8 animate-fadeIn" style={{ animationDelay: '0ms' }}>
@@ -177,6 +120,7 @@ export default function SettingsPage() {
                 id="name"
                 value={fullName}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
+                disabled={!currentUser || isSavingAccountInfo}
               />
             </div>
             <div className="space-y-2">
@@ -187,8 +131,9 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-          <Button className="mt-2" onClick={handleAccountInfoSave}>
-            <Save size={18} className="mr-2" /> Save Changes
+          <Button className="mt-2" onClick={handleAccountInfoSave} disabled={!currentUser || isSavingAccountInfo}>
+            <Save size={18} className="mr-2" /> 
+            {isSavingAccountInfo ? 'Saving...' : 'Save Changes'}
           </Button>
         </CardContent>
       </Card>
@@ -201,8 +146,8 @@ export default function SettingsPage() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="currency">Preferred Currency</Label>
-            <Input id="currency" value={userSettings.currency} readOnly className="bg-muted/50 cursor-not-allowed" />
-             <p className="text-xs text-muted-foreground">Currency setting is managed globally.</p>
+            <Input id="currency" value="INR" readOnly className="bg-muted/50 cursor-not-allowed" />
+             <p className="text-xs text-muted-foreground">Currency setting is managed globally (INR).</p>
           </div>
           
           <Separator />
@@ -257,7 +202,7 @@ export default function SettingsPage() {
                 </Label>
                 <Switch
                   id="sms-notifications"
-                  checked={userSettings.notifications.sms}
+                  checked={false}
                   aria-label="Toggle SMS notifications"
                   disabled
                 />
@@ -273,91 +218,21 @@ export default function SettingsPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Change Password</CardTitle>
-          <CardDescription>Update your account password.
-            <br/>
-            <span className="text-xs text-muted-foreground">(For demo user: current password is 'password123')</span>
+          <CardDescription>
+            Password management is handled through Firebase. 
+            If you need to change your password, please use the "Forgot Password" link on the login page, 
+            or manage your account through Firebase directly if applicable.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleChangePassword} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
-              <div className="relative">
-                <Input
-                  id="current-password"
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                >
-                  {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  <span className="sr-only">{showCurrentPassword ? 'Hide password' : 'Show password'}</span>
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-               <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showNewPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                >
-                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  <span className="sr-only">{showNewPassword ? 'Hide password' : 'Show password'}</span>
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirm-new-password"
-                  type={showConfirmNewPassword ? "text" : "password"}
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  required
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                  onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                >
-                  {showConfirmNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  <span className="sr-only">{showConfirmNewPassword ? 'Hide password' : 'Show password'}</span>
-                </Button>
-              </div>
-            </div>
-            <Button type="submit" className="mt-2" disabled={isPasswordChanging}>
-              <KeyRound size={18} className="mr-2" /> 
-              {isPasswordChanging ? 'Changing...' : 'Change Password'}
-            </Button>
-          </form>
+          <Button disabled className="mt-2">
+            <KeyRound size={18} className="mr-2" /> Change Password (Disabled)
+          </Button>
+           <p className="text-xs text-muted-foreground mt-2">
+            Direct password change within the app is currently not enabled with Firebase integration.
+          </p>
         </CardContent>
       </Card>
-
     </div>
   );
 }
-    

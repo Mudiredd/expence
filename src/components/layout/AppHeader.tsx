@@ -1,9 +1,9 @@
 
 "use client";
 import type { FC } from 'react';
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Landmark, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSidebar } from '@/components/ui/sidebar';
-import { useRouter }
-from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { signOut, onAuthStateChanged, type User } from 'firebase/auth';
 
 const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/dashboard')) return 'Dashboard';
@@ -35,44 +35,50 @@ export const AppHeader: FC = () => {
   const { toggleSidebar, isMobile } = useSidebar();
   const router = useRouter();
   const { toast } = useToast();
-  const [userName, setUserName] = React.useState<string | null>(null);
-  const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const getUserInitials = React.useCallback(() => {
-    if (userName) {
-      return userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    if (userEmail) {
-      return userEmail[0].toUpperCase();
-    }
-    return 'U';
-  }, [userName, userEmail]);
-
-  React.useEffect(() => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  // Listen for custom event from settings page to update display name if changed
+  useEffect(() => {
     const handleProfileUpdate = () => {
-      setUserName(localStorage.getItem('financeUserName'));
-      setUserEmail(localStorage.getItem('financeUserEmail'));
+      if (auth.currentUser) {
+        // Force re-render by creating a new user object reference
+        setCurrentUser({...auth.currentUser});
+      }
     };
-
-    // Initial load
-    handleProfileUpdate();
-
-    // Listen for custom event
     window.addEventListener('financeProfileUpdated', handleProfileUpdate);
-
-    // Cleanup
     return () => {
       window.removeEventListener('financeProfileUpdated', handleProfileUpdate);
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('financeUserToken');
-    localStorage.removeItem('financeUserEmail');
-    localStorage.removeItem('financeUserName');
-    // No longer need to remove avatar URL as it's not being used
-    toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    router.push('/login');
+
+  const getUserInitials = useCallback(() => {
+    if (currentUser?.displayName) {
+      return currentUser.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (currentUser?.email) {
+      return currentUser.email[0].toUpperCase();
+    }
+    return 'U';
+  }, [currentUser]);
+
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
+      router.push('/login');
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({ title: "Logout Failed", description: "Could not log out. Please try again.", variant: "destructive" });
+    }
   };
   
   const navigateToSettings = () => {
@@ -101,41 +107,42 @@ export const AppHeader: FC = () => {
           <h1 className="text-xl font-semibold font-headline">{pageTitle}</h1>
         )}
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={undefined} alt="User avatar trigger" />
-              <AvatarFallback>{getUserInitials()}</AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-64" align="end" forceMount>
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={undefined} alt="User avatar menu" />
+      {currentUser && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar className="h-9 w-9">
+                {/* Firebase user objects don't typically have photoURL by default unless set */}
+                <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || "User avatar"} />
                 <AvatarFallback>{getUserInitials()}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{userName || "User"}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {userEmail || "user@example.com"}
-                </p>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-64" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || "User avatar menu"} />
+                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{currentUser.displayName || "User"}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {currentUser.email || "user@example.com"}
+                  </p>
+                </div>
               </div>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={navigateToSettings}>Profile</DropdownMenuItem>
-          <DropdownMenuItem onClick={navigateToSettings}>Settings</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
-            Log out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={navigateToSettings}>Profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={navigateToSettings}>Settings</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </header>
   );
 };
-
-    
