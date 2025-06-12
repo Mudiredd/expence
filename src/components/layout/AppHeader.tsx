@@ -25,6 +25,7 @@ const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/add-transaction')) return 'Add Transaction';
   if (pathname.startsWith('/transactions')) return 'Transaction History';
   if (pathname.startsWith('/reports')) return 'Reports & Analytics';
+  if (pathname.startsWith('/goals')) return 'Financial Goals';
   if (pathname.startsWith('/settings')) return 'Settings';
   return 'Vishnu Finance Tracker';
 };
@@ -44,11 +45,9 @@ export const AppHeader: FC = () => {
     return () => unsubscribe();
   }, []);
   
-  // Listen for custom event from settings page to update display name if changed
   useEffect(() => {
     const handleProfileUpdate = () => {
       if (auth.currentUser) {
-        // Force re-render by creating a new user object reference
         setCurrentUser({...auth.currentUser});
       }
     };
@@ -112,7 +111,6 @@ export const AppHeader: FC = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-9 w-9">
-                {/* Firebase user objects don't typically have photoURL by default unless set */}
                 <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || "User avatar"} />
                 <AvatarFallback>{getUserInitials()}</AvatarFallback>
               </Avatar>

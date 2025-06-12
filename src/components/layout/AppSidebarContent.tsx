@@ -3,7 +3,7 @@
 import type { FC } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Landmark, LayoutDashboard, PlusCircle, List, BarChart3, LogOut, Settings } from 'lucide-react';
+import { Landmark, LayoutDashboard, PlusCircle, List, BarChart3, LogOut, Settings, Target } from 'lucide-react';
 import {
   SidebarHeader,
   SidebarContent,
@@ -22,6 +22,7 @@ const navItems = [
   { href: '/add-transaction', label: 'Add Transaction', icon: PlusCircle },
   { href: '/transactions', label: 'Transactions', icon: List },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/goals', label: 'Goals', icon: Target },
 ];
 
 export const AppSidebarContent: FC = () => {
