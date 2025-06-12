@@ -38,6 +38,16 @@ export const AppHeader: FC = () => {
   const [userName, setUserName] = React.useState<string | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
 
+  const getUserInitials = React.useCallback(() => {
+    if (userName) {
+      return userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (userEmail) {
+      return userEmail[0].toUpperCase();
+    }
+    return 'U';
+  }, [userName, userEmail]);
+
   React.useEffect(() => {
     const handleProfileUpdate = () => {
       setUserName(localStorage.getItem('financeUserName'));
@@ -64,16 +74,6 @@ export const AppHeader: FC = () => {
     router.push('/login');
   };
   
-  const getUserInitials = () => {
-    if (userName) {
-      return userName.split(' ').map(n => n[0]).join('').toUpperCase();
-    }
-    if (userEmail) {
-      return userEmail[0].toUpperCase();
-    }
-    return 'U';
-  };
-
   const navigateToSettings = () => {
     router.push('/settings');
   };
@@ -104,18 +104,24 @@ export const AppHeader: FC = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
             <Avatar className="h-9 w-9">
-              <AvatarImage src="https://placehold.co/100x100.png" alt="User avatar" data-ai-hint="user avatar" />
+              <AvatarImage src="https://placehold.co/100x100.png" alt="User avatar trigger" data-ai-hint="user avatar" />
               <AvatarFallback>{getUserInitials()}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuContent className="w-64" align="end" forceMount> {/* Increased width for avatar */}
           <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{userName || "User"}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {userEmail || "user@example.com"}
-              </p>
+            <div className="flex items-center gap-3"> {/* Use flex row and gap for avatar and text */}
+              <Avatar className="h-10 w-10"> {/* Avatar inside the dropdown */}
+                <AvatarImage src="https://placehold.co/100x100.png" alt="User avatar menu" data-ai-hint="user avatar small" />
+                <AvatarFallback>{getUserInitials()}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{userName || "User"}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {userEmail || "user@example.com"}
+                </p>
+              </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -130,3 +136,4 @@ export const AppHeader: FC = () => {
     </header>
   );
 };
+
