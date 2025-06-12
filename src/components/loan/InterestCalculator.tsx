@@ -19,7 +19,7 @@ export const InterestCalculator: FC = () => {
   const [principal, setPrincipal] = useState<string>('');
   const [rate, setRate] = useState<string>('');
   const [term, setTerm] = useState<string>(''); // Term in years
-  const [ratePeriod, setRatePeriod] = useState<string>('year'); // 'year' or 'month'
+  const [ratePeriod, setRatePeriod] = useState<string>('year'); // 'year', 'month', or 'rupees_per_100_per_month'
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
@@ -48,8 +48,8 @@ export const InterestCalculator: FC = () => {
       return;
     }
 
-    // Convert monthly rate to annual rate if needed
-    const annualRatePercent = ratePeriod === 'month' ? r * 12 : r;
+    // Convert rate to annual rate if needed
+    const annualRatePercent = (ratePeriod === 'month' || ratePeriod === 'rupees_per_100_per_month') ? r * 12 : r;
 
     // Simulate calculation delay
     setTimeout(() => {
@@ -107,18 +107,19 @@ export const InterestCalculator: FC = () => {
                 id="rate"
                 type="number"
                 step="0.01"
-                placeholder="e.g., 8.5"
+                placeholder="e.g., 8.5 or 2.50"
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
                 className="text-base"
               />
               <Select value={ratePeriod} onValueChange={setRatePeriod}>
-                <SelectTrigger className="w-[120px] text-base">
+                <SelectTrigger className="w-[180px] text-base md:w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="year">Per Year</SelectItem>
-                  <SelectItem value="month">Per Month</SelectItem>
+                  <SelectItem value="month">Per Month (%)</SelectItem>
+                  <SelectItem value="rupees_per_100_per_month">₹ per ₹100 / month</SelectItem>
                 </SelectContent>
               </Select>
             </div>

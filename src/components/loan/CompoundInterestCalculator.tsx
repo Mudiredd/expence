@@ -25,7 +25,7 @@ const compoundingFrequencies = [
 export const CompoundInterestCalculator: FC = () => {
   const [principal, setPrincipal] = useState<string>('');
   const [rate, setRate] = useState<string>('');
-  const [ratePeriod, setRatePeriod] = useState<string>('year'); // 'year' or 'month'
+  const [ratePeriod, setRatePeriod] = useState<string>('year'); // 'year', 'month', or 'rupees_per_100_per_month'
   const [term, setTerm] = useState<string>(''); // Term in years
   const [compoundingFrequency, setCompoundingFrequency] = useState<string>(compoundingFrequencies[0].value.toString());
   const [result, setResult] = useState<CompoundCalculationResult | null>(null);
@@ -37,7 +37,7 @@ export const CompoundInterestCalculator: FC = () => {
     setResult(null);
 
     const p = parseFloat(principal);
-    let r_input = parseFloat(rate); // Annual rate in percentage
+    let r_input = parseFloat(rate); // Interest rate in percentage
     const t = parseFloat(term); // Term in years
     const n_comp_freq = parseInt(compoundingFrequency); // Compounding periods per year
 
@@ -64,7 +64,7 @@ export const CompoundInterestCalculator: FC = () => {
 
     // Convert monthly rate to a nominal annual rate if needed for the formula A = P(1 + r/n)^(nt)
     // where 'r' is the nominal annual rate and 'n' is compounding frequency per year.
-    const nominalAnnualRatePercent = ratePeriod === 'month' ? r_input * 12 : r_input;
+    const nominalAnnualRatePercent = (ratePeriod === 'month' || ratePeriod === 'rupees_per_100_per_month') ? r_input * 12 : r_input;
     const nominalAnnualRateDecimal = nominalAnnualRatePercent / 100;
 
     // Simulate calculation delay
@@ -121,18 +121,19 @@ export const CompoundInterestCalculator: FC = () => {
                 id="compoundRate"
                 type="number"
                 step="0.01"
-                placeholder="e.g., 8.5"
+                placeholder="e.g., 8.5 or 2.50"
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
                 className="text-base flex-grow"
               />
               <Select value={ratePeriod} onValueChange={setRatePeriod}>
-                <SelectTrigger className="w-[120px] text-base">
+                <SelectTrigger className="w-[180px] text-base md:w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="year">Per Year</SelectItem>
-                  <SelectItem value="month">Per Month</SelectItem>
+                  <SelectItem value="month">Per Month (%)</SelectItem>
+                  <SelectItem value="rupees_per_100_per_month">₹ per ₹100 / month</SelectItem>
                 </SelectContent>
               </Select>
             </div>
