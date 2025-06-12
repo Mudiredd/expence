@@ -11,9 +11,8 @@ import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
   const [isMounted, setIsMounted] = useState(false);
-  // Initialize darkMode state. Default to false, actual value set in useEffect.
-  // This initial false matches the server-rendered state as layout.tsx no longer has 'dark' class.
   const [darkMode, setDarkMode] = useState(false);
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true); // New state
 
   // Placeholder for other user settings - can be made dynamic later
   const userSettings = {
@@ -21,7 +20,7 @@ export default function SettingsPage() {
     email: 'user@example.com',
     currency: 'INR',
     notifications: {
-      email: true,
+      // email: true, // This will now be managed by emailNotificationsEnabled state
       sms: false,
     },
   };
@@ -33,21 +32,27 @@ export default function SettingsPage() {
     if (storedTheme) {
       initialDarkMode = storedTheme === 'dark';
     } else {
-      // Check system preference if no theme is stored
       initialDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     setDarkMode(initialDarkMode);
-
-    // Apply initial theme to the document immediately after determining it
     if (initialDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []); // Empty dependency array ensures this runs once on mount
+
+    // Initialize email notifications setting
+    const storedEmailNotifications = localStorage.getItem('emailNotificationsEnabled');
+    if (storedEmailNotifications !== null) {
+      setEmailNotificationsEnabled(JSON.parse(storedEmailNotifications));
+    } else {
+      setEmailNotificationsEnabled(true); // Default to true if not found
+    }
+
+  }, []); 
 
   useEffect(() => {
-    if (!isMounted) return; // Don't run on server or before initial mount effect has run
+    if (!isMounted) return; 
 
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -56,7 +61,11 @@ export default function SettingsPage() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
-  }, [darkMode, isMounted]); // Re-run when darkMode state or isMounted changes
+    
+    // Persist email notifications setting
+    localStorage.setItem('emailNotificationsEnabled', JSON.stringify(emailNotificationsEnabled));
+
+  }, [darkMode, emailNotificationsEnabled, isMounted]); 
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -131,8 +140,8 @@ export default function SettingsPage() {
                 </Label>
                 <Switch
                   id="email-notifications"
-                  checked={userSettings.notifications.email}
-                  // onCheckedChange={(checked) => { /* Handle email notification change */ }}
+                  checked={emailNotificationsEnabled}
+                  onCheckedChange={setEmailNotificationsEnabled}
                   aria-label="Toggle email notifications"
                 />
               </div>
@@ -170,4 +179,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
