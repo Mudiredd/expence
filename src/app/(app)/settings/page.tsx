@@ -7,20 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch'; 
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Save } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SettingsPage() {
+  const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true); // New state
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
+  const [fullName, setFullName] = useState('');
 
   // Placeholder for other user settings - can be made dynamic later
   const userSettings = {
-    name: 'Demo User',
+    // name: 'Demo User', // This will now be managed by fullName state
     email: 'user@example.com',
     currency: 'INR',
     notifications: {
-      // email: true, // This will now be managed by emailNotificationsEnabled state
       sms: false,
     },
   };
@@ -41,12 +43,18 @@ export default function SettingsPage() {
       document.documentElement.classList.remove('dark');
     }
 
-    // Initialize email notifications setting
     const storedEmailNotifications = localStorage.getItem('emailNotificationsEnabled');
     if (storedEmailNotifications !== null) {
       setEmailNotificationsEnabled(JSON.parse(storedEmailNotifications));
     } else {
-      setEmailNotificationsEnabled(true); // Default to true if not found
+      setEmailNotificationsEnabled(true); 
+    }
+
+    const storedName = localStorage.getItem('financeUserName');
+    if (storedName) {
+      setFullName(storedName);
+    } else {
+      setFullName('Demo User'); // Default if not found
     }
 
   }, []); 
@@ -62,10 +70,28 @@ export default function SettingsPage() {
       localStorage.setItem('theme', 'light');
     }
     
-    // Persist email notifications setting
     localStorage.setItem('emailNotificationsEnabled', JSON.stringify(emailNotificationsEnabled));
 
   }, [darkMode, emailNotificationsEnabled, isMounted]); 
+
+  const handleAccountInfoSave = () => {
+    localStorage.setItem('financeUserName', fullName);
+    toast({
+      title: "Account Updated",
+      description: "Your name has been successfully updated.",
+    });
+    // Potentially trigger a re-fetch or update in AppHeader if name is displayed there reactively
+  };
+
+  const handlePreferencesSave = () => {
+    // This button currently doesn't do anything as dark mode and email notifications
+    // are saved immediately on change via their useEffect.
+    // If other preferences were added that need explicit saving, they'd go here.
+    toast({
+      title: "Preferences Saved",
+      description: "Your preferences have been updated (if applicable).",
+    });
+  };
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -78,7 +104,11 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" defaultValue={userSettings.name} />
+              <Input 
+                id="name" 
+                value={fullName} 
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)} 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
@@ -88,7 +118,7 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-          <Button className="mt-2">
+          <Button className="mt-2" onClick={handleAccountInfoSave}>
             <Save size={18} className="mr-2" /> Save Changes
           </Button>
         </CardContent>
@@ -157,12 +187,12 @@ export default function SettingsPage() {
                   checked={userSettings.notifications.sms}
                   // onCheckedChange={(checked) => { /* Handle SMS notification change */ }}
                   aria-label="Toggle SMS notifications"
-                  disabled // Example: SMS might be a premium feature or not configured
+                  disabled 
                 />
               </div>
             </div>
           </div>
-           <Button className="mt-2">
+           <Button className="mt-2" onClick={handlePreferencesSave}>
             <Save size={18} className="mr-2" /> Save Preferences
           </Button>
         </CardContent>
