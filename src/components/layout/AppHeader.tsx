@@ -2,6 +2,7 @@
 "use client";
 import type { FC } from 'react';
 import React from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Landmark, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ export const AppHeader: FC = () => {
     return () => {
       window.removeEventListener('financeProfileUpdated', handleProfileUpdate);
     };
-  }, []); // Empty dependency array is correct for setting up and tearing down event listeners.
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('financeUserToken');
@@ -86,7 +87,18 @@ export const AppHeader: FC = () => {
         </Button>
       )}
       <div className="flex-1">
-        <h1 className="text-xl font-semibold font-headline">{pageTitle}</h1>
+        {isMobile ? (
+          <Link href="/dashboard" className="flex items-center gap-2 text-foreground hover:no-underline">
+            <div className="bg-primary text-primary-foreground p-1.5 rounded-lg">
+              <Landmark size={20} />
+            </div>
+            <span className="text-lg font-semibold font-headline">
+              Vishnu Finance
+            </span>
+          </Link>
+        ) : (
+          <h1 className="text-xl font-semibold font-headline">{pageTitle}</h1>
+        )}
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
