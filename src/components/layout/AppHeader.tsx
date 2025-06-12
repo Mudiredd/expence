@@ -37,6 +37,7 @@ export const AppHeader: FC = () => {
   const { toast } = useToast();
   const [userName, setUserName] = React.useState<string | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
 
   const getUserInitials = React.useCallback(() => {
     if (userName) {
@@ -52,6 +53,7 @@ export const AppHeader: FC = () => {
     const handleProfileUpdate = () => {
       setUserName(localStorage.getItem('financeUserName'));
       setUserEmail(localStorage.getItem('financeUserEmail'));
+      setAvatarUrl(localStorage.getItem('financeUserAvatarUrl'));
     };
 
     // Initial load
@@ -70,6 +72,7 @@ export const AppHeader: FC = () => {
     localStorage.removeItem('financeUserToken');
     localStorage.removeItem('financeUserEmail');
     localStorage.removeItem('financeUserName');
+    localStorage.removeItem('financeUserAvatarUrl');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
     router.push('/login');
   };
@@ -104,16 +107,16 @@ export const AppHeader: FC = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
             <Avatar className="h-9 w-9">
-              <AvatarImage src="https://placehold.co/100x100.png" alt="User avatar trigger" data-ai-hint="user avatar" />
+              <AvatarImage src={avatarUrl || undefined} alt="User avatar trigger" data-ai-hint="user avatar" />
               <AvatarFallback>{getUserInitials()}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-64" align="end" forceMount> {/* Increased width for avatar */}
+        <DropdownMenuContent className="w-64" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
-            <div className="flex items-center gap-3"> {/* Use flex row and gap for avatar and text */}
-              <Avatar className="h-10 w-10"> {/* Avatar inside the dropdown */}
-                <AvatarImage src="https://placehold.co/100x100.png" alt="User avatar menu" data-ai-hint="user avatar small" />
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={avatarUrl || undefined} alt="User avatar menu" data-ai-hint="user avatar small" />
                 <AvatarFallback>{getUserInitials()}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col space-y-1">
@@ -137,3 +140,4 @@ export const AppHeader: FC = () => {
   );
 };
 
+    

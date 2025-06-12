@@ -4,11 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch'; 
+import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Save } from 'lucide-react';
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+
+const AVATAR_OPTIONS = [
+  { id: 'male', name: 'Male', url: 'https://placehold.co/100x100.png', hint: 'male avatar' },
+  { id: 'female', name: 'Female', url: 'https://placehold.co/100x100.png', hint: 'female avatar' },
+];
+const DEFAULT_AVATAR_URL = AVATAR_OPTIONS[0].url; // Male avatar
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -16,6 +24,7 @@ export default function SettingsPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [fullName, setFullName] = useState('');
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string>(DEFAULT_AVATAR_URL);
 
   // Placeholder for other user settings - can be made dynamic later
   const userSettings = {
@@ -37,6 +46,7 @@ export default function SettingsPage() {
       initialDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     setDarkMode(initialDarkMode);
+    // Apply theme immediately based on initialDarkMode
     if (initialDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -59,11 +69,20 @@ export default function SettingsPage() {
       const emailName = localStorage.getItem('financeUserEmail')?.split('@')[0];
       setFullName(emailName || 'Demo User'); // Default if not found
     }
-  }, []); 
+
+    // Avatar Initialization
+    const storedAvatarUrl = localStorage.getItem('financeUserAvatarUrl');
+    if (storedAvatarUrl) {
+      setSelectedAvatarUrl(storedAvatarUrl);
+    } else {
+      setSelectedAvatarUrl(DEFAULT_AVATAR_URL);
+    }
+
+  }, []);
 
   // Effect for Dark Mode and Email Notifications Persistence
   useEffect(() => {
-    if (!isMounted) return; 
+    if (!isMounted) return;
 
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -75,20 +94,19 @@ export default function SettingsPage() {
     
     localStorage.setItem('emailNotificationsEnabled', JSON.stringify(emailNotificationsEnabled));
 
-  }, [darkMode, emailNotificationsEnabled, isMounted]); 
+  }, [darkMode, emailNotificationsEnabled, isMounted]);
 
   const handleAccountInfoSave = () => {
     localStorage.setItem('financeUserName', fullName);
+    localStorage.setItem('financeUserAvatarUrl', selectedAvatarUrl);
     window.dispatchEvent(new CustomEvent('financeProfileUpdated')); // Dispatch event
     toast({
       title: "Account Updated",
-      description: "Your name has been successfully updated.",
+      description: "Your account details have been successfully updated.",
     });
   };
 
   const handlePreferencesSave = () => {
-    // Dark mode and email notifications are saved immediately on change via their useEffect.
-    // This button can be used for other preferences if added later.
     toast({
       title: "Preferences Saved",
       description: "Your preferences have been updated (if applicable).",
@@ -99,20 +117,46 @@ export default function SettingsPage() {
 
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn" style={{ animationDelay: '0ms' }}>
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Account Information</CardTitle>
-          <CardDescription>Manage your personal details.</CardDescription>
+          <CardDescription>Manage your personal details and avatar.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Choose Avatar</Label>
+            <div className="flex space-x-4">
+              {AVATAR_OPTIONS.map((avatar) => (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  onClick={() => setSelectedAvatarUrl(avatar.url)}
+                  className={cn(
+                    "rounded-full overflow-hidden w-20 h-20 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                    selectedAvatarUrl === avatar.url && "ring-2 ring-primary ring-offset-2 border-primary"
+                  )}
+                >
+                  <Image
+                    src={avatar.url}
+                    alt={avatar.name}
+                    width={80}
+                    height={80}
+                    className="rounded-full object-cover"
+                    data-ai-hint={avatar.hint}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input 
-                id="name" 
-                value={fullName} 
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)} 
+              <Input
+                id="name"
+                value={fullName}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -195,7 +239,7 @@ export default function SettingsPage() {
                   id="sms-notifications"
                   checked={userSettings.notifications.sms}
                   aria-label="Toggle SMS notifications"
-                  disabled 
+                  disabled
                 />
               </div>
             </div>
@@ -208,3 +252,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
