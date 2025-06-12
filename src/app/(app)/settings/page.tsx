@@ -13,8 +13,8 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 const AVATAR_OPTIONS = [
-  { id: 'male', name: 'Male', url: 'https://placehold.co/100x100.png', hint: 'male avatar' },
-  { id: 'female', name: 'Female', url: 'https://placehold.co/100x100.png', hint: 'female avatar' },
+  { id: 'male', name: 'Male', url: 'https://placehold.co/100x100.png', hint: 'male illustration' },
+  { id: 'female', name: 'Female', url: 'https://placehold.co/100x100.png', hint: 'female illustration' },
 ];
 const DEFAULT_AVATAR_URL = AVATAR_OPTIONS[0].url; // Male avatar
 
