@@ -24,6 +24,7 @@ const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/add-transaction')) return 'Add Transaction';
   if (pathname.startsWith('/transactions')) return 'Transaction History';
   if (pathname.startsWith('/reports')) return 'Reports & Analytics';
+  if (pathname.startsWith('/settings')) return 'Settings';
   return 'Vishnu Finance Tracker';
 };
 
@@ -59,6 +60,10 @@ export const AppHeader: FC = () => {
     return 'U';
   };
 
+  const navigateToSettings = () => {
+    router.push('/settings');
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
       {isMobile && (
@@ -89,8 +94,8 @@ export const AppHeader: FC = () => {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem onClick={navigateToSettings}>Profile</DropdownMenuItem>
+          <DropdownMenuItem onClick={navigateToSettings}>Settings</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
             Log out
