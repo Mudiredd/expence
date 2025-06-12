@@ -3,28 +3,44 @@ export type TransactionType = 'income' | 'expense';
 
 export interface Transaction {
   id: string;
-  userId: string; // Added to associate transaction with a user
+  userId: string; 
   type: TransactionType;
   category: string;
   amount: number;
-  date: string; // Store as ISO string (e.g., YYYY-MM-DD) for input, convert to Timestamp for Firestore
+  date: string; 
   description?: string;
 }
 
 export interface Category {
   id: string;
   name: string;
-  type: TransactionType; // So categories can be income-specific or expense-specific
+  type: TransactionType; 
 }
 
 export interface ChartDataPoint {
   name: string;
   value: number;
-  fill?: string; // For pie chart segment colors
+  fill?: string; 
 }
 
 export interface MonthlySummary {
-  month: string; // e.g., "Jan 2024"
+  month: string; 
   income: number;
   expenses: number;
+}
+
+export type LoanRatePeriod = 'year' | 'month' | 'rupees_per_100_per_month';
+
+export interface Loan {
+  id: string;
+  userId: string;
+  loanName: string;
+  lenderName: string;
+  principalAmount: number;
+  interestRate: number;
+  ratePeriod: LoanRatePeriod;
+  loanTermYears: number;
+  startDate: string; // YYYY-MM-DD stored as string, converted to Timestamp for Firestore
+  totalAmountPaid: number;
+  // status: 'active' | 'paid_off'; // Future enhancement
 }
