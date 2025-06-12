@@ -1,3 +1,4 @@
+
 "use client";
 import type { FC } from 'react';
 import Link from 'next/link';
@@ -63,17 +64,14 @@ export const AppSidebarContent: FC = () => {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref legacyBehavior>
+              <Link href={item.href}>
                 <SidebarMenuButton
-                  asChild
                   isActive={pathname.startsWith(item.href)}
                   tooltip={{ children: item.label, className: "font-body" }}
                   onClick={handleLinkClick}
                 >
-                  <a>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </a>
+                  <item.icon />
+                  <span>{item.label}</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
@@ -84,6 +82,7 @@ export const AppSidebarContent: FC = () => {
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
          <SidebarMenu>
            <SidebarMenuItem>
+             {/* TODO: Make settings link functional or a Link component */}
              <SidebarMenuButton tooltip={{ children: "Settings", className: "font-body" }} onClick={handleLinkClick}>
                 <Settings />
                 <span>Settings</span>
