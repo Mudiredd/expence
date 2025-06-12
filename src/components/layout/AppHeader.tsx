@@ -1,5 +1,7 @@
+
 "use client";
 import type { FC } from 'react';
+import React from 'react'; // Added this line
 import { usePathname } from 'next/navigation';
 import { Landmark, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
