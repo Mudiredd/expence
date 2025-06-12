@@ -97,7 +97,7 @@ const LoginPage: FC = () => {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col items-center space-y-2 text-sm">
-          <Link href="#" className="text-primary hover:underline">
+          <Link href="/forgot-password" className="text-primary hover:underline">
             Forgot password?
           </Link>
           <p>
