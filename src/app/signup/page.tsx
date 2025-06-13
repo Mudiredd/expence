@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
 
 const SignupPage: FC = () => {
   const router = useRouter();
@@ -41,18 +41,21 @@ const SignupPage: FC = () => {
         await updateProfile(userCredential.user, {
           displayName: name,
         });
-        // Send email verification
         await sendEmailVerification(userCredential.user);
+        
+        // Attempt to sign in the user immediately after signup
+        await signInWithEmailAndPassword(auth, email, password);
+        // AuthGuard will handle redirect to /dashboard
+        
         toast({
-          title: "Signup Successful!",
-          description: "Your account has been created. Please check your email to verify your account before logging in.",
-          duration: 7000, // Keep toast longer
+          title: "Account Created!",
+          description: "You're now logged in. Please check your email to verify your account.",
+          duration: 7000, 
         });
       }
-      // Don't redirect immediately, let user see the message to check email.
-      // router.push('/login'); // Or redirect to a page that says "check your email"
+      // No explicit router.push here; AuthGuard handles redirection for logged-in users.
     } catch (error: any) {
-      console.error("Firebase signup error:", error);
+      console.error("Firebase signup or auto-login error:", error);
       let errorMessage = "Signup failed. Please try again.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email address is already in use.";
@@ -61,6 +64,7 @@ const SignupPage: FC = () => {
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = "Please enter a valid email address.";
       }
+      // Handle potential errors from signInWithEmailAndPassword as well, though less likely here.
       toast({
         title: "Signup Failed",
         description: errorMessage,
