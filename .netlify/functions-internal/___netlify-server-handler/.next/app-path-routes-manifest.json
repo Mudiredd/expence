@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/login/page": "/login",
+  "/page": "/",
+  "/signup/page": "/signup",
+  "/forgot-password/page": "/forgot-password",
+  "/(app)/loan/page": "/loan",
+  "/(app)/settings/page": "/settings",
+  "/(app)/add-transaction/page": "/add-transaction",
+  "/(app)/dashboard/page": "/dashboard",
+  "/(app)/reports/page": "/reports",
+  "/(app)/transactions/page": "/transactions",
+  "/(app)/goals/page": "/goals"
+}

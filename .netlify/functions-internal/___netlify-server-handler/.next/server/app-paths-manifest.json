@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/signup/page": "app/signup/page.js",
+  "/forgot-password/page": "app/forgot-password/page.js",
+  "/(app)/loan/page": "app/(app)/loan/page.js",
+  "/(app)/settings/page": "app/(app)/settings/page.js",
+  "/(app)/add-transaction/page": "app/(app)/add-transaction/page.js",
+  "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
+  "/(app)/reports/page": "app/(app)/reports/page.js",
+  "/(app)/transactions/page": "app/(app)/transactions/page.js",
+  "/(app)/goals/page": "app/(app)/goals/page.js"
+}
