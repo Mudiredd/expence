@@ -14,14 +14,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <AuthGuard>
       <TransactionProvider>
         <SidebarProvider> {/* Manages open/closed state, cookie for persistence */}
-          <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-            <AppSidebarContent />
-            <SidebarRail />
+          <Sidebar key="main-sidebar" collapsible="icon" className="border-r border-sidebar-border">
+            <AppSidebarContent key="sidebar-content" />
+            <SidebarRail key="sidebar-rail" />
           </Sidebar>
-          <SidebarInset>
-            <AppHeader />
-            <EmailVerificationBanner /> {/* Add the banner here */}
-            <div className="p-4 sm:p-6 lg:p-8 bg-background flex-1 overflow-auto"> {/* Content padding and ensure it fills space */}
+          <SidebarInset key="main-content-inset">
+            <AppHeader key="app-header" />
+            <EmailVerificationBanner key="email-banner" /> {/* Add the banner here */}
+            <div key="content-div" className="p-4 sm:p-6 lg:p-8 bg-background flex-1 overflow-auto"> {/* Content padding and ensure it fills space */}
               <div className="w-full max-w-7xl mx-auto"> {/* Added max-width and centering */}
                 {children}
               </div>
