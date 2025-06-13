@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 
 const SignupPage: FC = () => {
   const router = useRouter();
@@ -37,17 +37,20 @@ const SignupPage: FC = () => {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Update user's profile with display name
       if (userCredential.user) {
         await updateProfile(userCredential.user, {
           displayName: name,
         });
+        // Send email verification
+        await sendEmailVerification(userCredential.user);
+        toast({
+          title: "Signup Successful!",
+          description: "Your account has been created. Please check your email to verify your account before logging in.",
+          duration: 7000, // Keep toast longer
+        });
       }
-      toast({
-        title: "Signup Successful",
-        description: "Your account has been created. Welcome!",
-      });
-      router.push('/dashboard'); // Redirect to dashboard after signup
+      // Don't redirect immediately, let user see the message to check email.
+      // router.push('/login'); // Or redirect to a page that says "check your email"
     } catch (error: any) {
       console.error("Firebase signup error:", error);
       let errorMessage = "Signup failed. Please try again.";
