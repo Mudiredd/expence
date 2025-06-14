@@ -18,6 +18,7 @@ import { CalendarIcon, CheckCircle, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Transaction, TransactionType } from '@/types';
+import { useRouter } from 'next/navigation';
 
 const transactionFormSchema = z.object({
   type: z.enum(['income', 'expense'], { required_error: "Transaction type is required." }),
@@ -46,6 +47,7 @@ export const TransactionForm: FC<TransactionFormProps> = ({
   const { addTransaction, editTransaction } = useTransactions();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const { control, handleSubmit, register, watch, reset, formState: { errors } } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionFormSchema),
@@ -85,6 +87,7 @@ export const TransactionForm: FC<TransactionFormProps> = ({
           description: `${data.type === 'income' ? 'Income' : 'Expense'} of ${data.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} updated.`,
           action: <CheckCircle className="text-green-500" />,
         });
+        router.push('/dashboard'); // Redirect to dashboard after update
       } else {
         await addTransaction(transactionData);
         toast({

@@ -81,31 +81,49 @@ export const AppSidebarContent: FC = () => {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
-      </SidebarContent>
-
-      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
+      </SidebarContent>      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
          <SidebarMenu>
-           <SidebarMenuItem>
-             <Link href="/settings" onClick={handleLinkClick}>
-               <SidebarMenuButton 
-                  isActive={pathname.startsWith('/settings')}
-                  tooltip={{ children: "Settings", className: "font-body" }}
-                >
-                  <Settings />
-                  <span>Settings</span>
-               </SidebarMenuButton>
-             </Link>
-           </SidebarMenuItem>
-           <SidebarMenuItem>
-             <SidebarMenuButton
-                className="text-red-500 hover:bg-red-100 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/50 dark:hover:text-red-300"
-                onClick={handleLogout}
-                tooltip={{ children: "Log Out", className: "font-body" }}
-              >
-               <LogOut />
-               <span>Log Out</span>
-             </SidebarMenuButton>
-           </SidebarMenuItem>
+           {[
+             {
+               key: 'settings',
+               href: '/settings',
+               icon: Settings,
+               label: 'Settings',
+               onClick: handleLinkClick,
+               isActive: pathname.startsWith('/settings')
+             },
+             {
+               key: 'logout',
+               icon: LogOut,
+               label: 'Log Out',
+               onClick: handleLogout,
+               className: "text-red-500 hover:bg-red-100 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/50 dark:hover:text-red-300"
+             }
+           ].map(item => (
+             <SidebarMenuItem key={item.key}>
+               {item.href ? (
+                 <Link href={item.href} onClick={item.onClick}>
+                   <SidebarMenuButton 
+                     isActive={item.isActive}
+                     tooltip={{ children: item.label, className: "font-body" }}
+                     className={item.className}
+                   >
+                     <item.icon />
+                     <span>{item.label}</span>
+                   </SidebarMenuButton>
+                 </Link>
+               ) : (
+                 <SidebarMenuButton
+                   onClick={item.onClick}
+                   tooltip={{ children: item.label, className: "font-body" }}
+                   className={item.className}
+                 >
+                   <item.icon />
+                   <span>{item.label}</span>
+                 </SidebarMenuButton>
+               )}
+             </SidebarMenuItem>
+           ))}
          </SidebarMenu>
       </SidebarFooter>
     </>

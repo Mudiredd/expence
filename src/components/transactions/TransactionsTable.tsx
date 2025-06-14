@@ -1,7 +1,7 @@
-
 "use client";
+
 import type { FC } from 'react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import type { Transaction, TransactionType } from '@/types';
 import { useTransactions } from '@/contexts/TransactionContext';
-import { ArrowUpDown, Search, Filter, Trash2, Edit, CalendarDays } from 'lucide-react';
+import { ArrowUpDown, Search, Filter, CalendarDays } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -25,13 +25,18 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { DateRange } from "react-day-picker"
+import { cn } from '@/lib/utils';
 
 type SortKey = keyof Transaction | '';
 type SortOrder = 'asc' | 'desc';
 
+interface TransactionsTableProps {
+  onSelect?: (transaction: Transaction) => void;
+}
+
 const ALL_CATEGORIES_VALUE = "_all_";
 
-export const TransactionsTable: FC = () => {
+export const TransactionsTable: FC<TransactionsTableProps> = ({ onSelect }) => {
   const { transactions, loading } = useTransactions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
@@ -40,96 +45,99 @@ export const TransactionsTable: FC = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
-
   const categories = useMemo(() => {
     const uniqueCategories = new Set(transactions.map(t => t.category));
     return Array.from(uniqueCategories);
   }, [transactions]);
 
   const filteredAndSortedTransactions = useMemo(() => {
-    let processedTransactions = [...transactions];
+    try {
+      let processedTransactions = [...transactions];
 
-    if (searchTerm) {
-      processedTransactions = processedTransactions.filter(t =>
-        t.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
+      // Apply search filter
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        processedTransactions = processedTransactions.filter(t =>
+          t.category.toLowerCase().includes(searchLower) ||
+          t.description?.toLowerCase().includes(searchLower) ||
+          false
+        );
+      }
 
-    if (filterType !== 'all') {
-      processedTransactions = processedTransactions.filter(t => t.type === filterType);
-    }
+      // Apply type filter
+      if (filterType !== 'all') {
+        processedTransactions = processedTransactions.filter(t => t.type === filterType);
+      }
 
-    if (filterCategory) {
-      processedTransactions = processedTransactions.filter(t => t.category === filterCategory);
-    }
-    
-    if (dateRange?.from) {
-      processedTransactions = processedTransactions.filter(t => {
-        const transactionDate = new Date(t.date);
-        return !isNaN(transactionDate.getTime()) && transactionDate >= dateRange.from!;
-      });
-    }
-    if (dateRange?.to) {
-      processedTransactions = processedTransactions.filter(t => {
-        const transactionDate = new Date(t.date);
-        // For 'to' date, we usually want to include the whole day.
-        const toDate = new Date(dateRange.to!);
-        toDate.setHours(23, 59, 59, 999); // Set to end of day
-        return !isNaN(transactionDate.getTime()) && transactionDate <= toDate;
-      });
-    }
+      // Apply category filter
+      if (filterCategory) {
+        processedTransactions = processedTransactions.filter(t => t.category === filterCategory);
+      }
 
+      // Apply date range filter
+      if (dateRange?.from) {
+        const fromDate = dateRange.from.setHours(0, 0, 0, 0);
+        processedTransactions = processedTransactions.filter(t => 
+          new Date(t.date).getTime() >= fromDate
+        );
+      }
+      if (dateRange?.to) {
+        const toDate = dateRange.to.setHours(23, 59, 59, 999);
+        processedTransactions = processedTransactions.filter(t => 
+          new Date(t.date).getTime() <= toDate
+        );
+      }
 
-    if (sortKey) {
-      processedTransactions.sort((a, b) => {
-        const valA = a[sortKey as keyof Transaction];
-        const valB = b[sortKey as keyof Transaction];
-        let comparison = 0;
-
-        if (valA === undefined && valB === undefined) {
-          comparison = 0;
-        } else if (valA === undefined) {
-          comparison = 1; // undefined values go last
-        } else if (valB === undefined) {
-          comparison = -1; // undefined values go last
-        } else {
-          if (sortKey === 'amount') {
-            comparison = (valA as number) - (valB as number);
-          } else if (sortKey === 'date') {
-            const dateA = new Date(valA as string).getTime();
-            const dateB = new Date(valB as string).getTime();
-            if (isNaN(dateA) && isNaN(dateB)) comparison = 0;
-            else if (isNaN(dateA)) comparison = 1;
-            else if (isNaN(dateB)) comparison = -1;
-            else comparison = dateA - dateB;
-          } else {
-            comparison = String(valA).localeCompare(String(valB));
+      // Apply sorting
+      if (sortKey) {
+        processedTransactions.sort((a, b) => {
+          try {
+            switch (sortKey) {
+              case 'date':
+                return sortOrder === 'asc'
+                  ? new Date(a.date).getTime() - new Date(b.date).getTime()
+                  : new Date(b.date).getTime() - new Date(a.date).getTime();
+              case 'amount':
+                return sortOrder === 'asc' ? a.amount - b.amount : b.amount - a.amount;
+              case 'type':
+              case 'category':
+                const aVal = a[sortKey]?.toString().toLowerCase() ?? '';
+                const bVal = b[sortKey]?.toString().toLowerCase() ?? '';
+                return sortOrder === 'asc'
+                  ? aVal.localeCompare(bVal)
+                  : bVal.localeCompare(aVal);
+              default:
+                return 0;
+            }
+          } catch (error) {
+            console.error('Sorting error:', error);
+            return 0;
           }
-        }
-        return sortOrder === 'asc' ? comparison : -comparison;
-      });
+        });
+      }
+
+      return processedTransactions;
+    } catch (error) {
+      console.error('Error processing transactions:', error);
+      return [];
     }
-    return processedTransactions;
   }, [transactions, searchTerm, filterType, filterCategory, sortKey, sortOrder, dateRange]);
 
   const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortKey(key);
-      setSortOrder('asc');
-    }
+    setSortOrder(prevOrder => sortKey === key && prevOrder === 'asc' ? 'desc' : 'asc');
+    setSortKey(key);
   };
-  
+
   const SortableHeader: FC<{ columnKey: SortKey; children: React.ReactNode }> = ({ columnKey, children }) => (
     <TableHead 
       onClick={() => handleSort(columnKey)} 
-      className="cursor-pointer hover:bg-muted/50 px-2 h-10 text-xs sm:px-4 sm:h-12 sm:text-sm"
+      className="cursor-pointer hover:bg-muted/50 text-xs sm:text-sm whitespace-nowrap"
     >
       <div className="flex items-center">
         {children}
-        {sortKey === columnKey && <ArrowUpDown className="ml-2 h-4 w-4" />}
+        {sortKey === columnKey && (
+          <ArrowUpDown className="ml-2 h-4 w-4 shrink-0" />
+        )}
       </div>
     </TableHead>
   );
@@ -137,81 +145,84 @@ export const TransactionsTable: FC = () => {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
-          <Skeleton className="h-10 w-full md:w-1/3" />
-          <Skeleton className="h-10 w-full md:w-1/4" />
-          <Skeleton className="h-10 w-full md:w-1/4" />
-          <Skeleton className="h-10 w-full md:w-1/6" />
+        <div className="flex flex-col gap-4 p-4 border rounded-lg">
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
         </div>
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
-        ))}
+        <div className="rounded-lg border">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 sm:h-16 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 animate-fadeIn">
-      <div className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg shadow bg-card">
+    <div className="space-y-4">
+      {/* Filters Section */}
+      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card">
+        {/* Search Input */}
         <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search by category or description..."
+            placeholder="Search transactions..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-9 h-9 text-sm w-full"
           />
         </div>
-        <Select value={filterType} onValueChange={(value) => setFilterType(value as TransactionType | 'all')}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <Filter className="mr-2 h-4 w-4 text-muted-foreground"/>
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="income">Income</SelectItem>
-            <SelectItem value="expense">Expense</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={filterCategory || ALL_CATEGORIES_VALUE} 
-          onValueChange={(value) => {
-            if (value === ALL_CATEGORIES_VALUE) {
-              setFilterCategory('');
-            } else {
-              setFilterCategory(value);
-            }
-          }}
-        >
-          <SelectTrigger className="w-full md:w-[180px]">
-             <Filter className="mr-2 h-4 w-4 text-muted-foreground"/>
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
-            {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Popover>
+
+        {/* Filter Controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <Select value={filterType} onValueChange={(value) => setFilterType(value as TransactionType | 'all')}>
+            <SelectTrigger className="h-9">
+              <Filter className="mr-2 h-4 w-4 text-muted-foreground"/>
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="income">Income</SelectItem>
+              <SelectItem value="expense">Expense</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filterCategory || ALL_CATEGORIES_VALUE}
+            onValueChange={(value) => setFilterCategory(value === ALL_CATEGORIES_VALUE ? '' : value)}
+          >
+            <SelectTrigger className="h-9">
+              <Filter className="mr-2 h-4 w-4 text-muted-foreground"/>
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Popover>
             <PopoverTrigger asChild>
               <Button
-                id="date"
-                variant={"outline"}
-                className="w-full md:w-auto justify-start text-left font-normal"
+                variant="outline"
+                className="h-9 px-3 text-sm justify-start font-normal"
               >
                 <CalendarDays className="mr-2 h-4 w-4" />
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
-                    </>
+                <span className="truncate">
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      `${format(dateRange.from, "MMM d")} - ${format(dateRange.to, "MMM d")}`
+                    ) : (
+                      format(dateRange.from, "MMM d")
+                    )
                   ) : (
-                    format(dateRange.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Pick a date range</span>
-                )}
+                    "Date Range"
+                  )}
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -221,62 +232,72 @@ export const TransactionsTable: FC = () => {
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
                 onSelect={setDateRange}
-                numberOfMonths={2}
+                numberOfMonths={1}
+                className="rounded-md border"
               />
             </PopoverContent>
           </Popover>
+        </div>
       </div>
 
-      <div className="rounded-lg border shadow-sm overflow-hidden bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortableHeader columnKey="date">Date</SortableHeader>
-              <SortableHeader columnKey="type">Type</SortableHeader>
-              <SortableHeader columnKey="category">Category</SortableHeader>
-              <SortableHeader columnKey="amount">Amount</SortableHeader>
-              <TableHead className="px-2 h-10 text-xs sm:px-4 sm:h-12 sm:text-sm">Description</TableHead>
-              {/* <TableHead>Actions</TableHead> */}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredAndSortedTransactions.length > 0 ? (
-              filteredAndSortedTransactions.map(t => {
-                const dateObj = new Date(t.date);
-                const displayDate = !isNaN(dateObj.getTime()) 
-                                    ? format(dateObj, "MMM dd, yyyy") 
-                                    : "Invalid Date";
-                return (
-                  <TableRow key={t.id} className="hover:bg-muted/20 transition-colors">
-                    <TableCell className="p-2 text-xs sm:p-4 sm:text-sm">{displayDate}</TableCell>
-                    <TableCell className="p-2 sm:p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        t.type === 'income' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
-                      }`}>
+      {/* Transactions List */}
+      <div className="rounded-lg border shadow-sm bg-card divide-y">
+        {filteredAndSortedTransactions.length > 0 ? (
+          filteredAndSortedTransactions.map((t) => (
+            <div
+              key={t.id}
+              onClick={() => onSelect?.(t)}
+              className="cursor-pointer hover:bg-muted/50 active:bg-muted/70 transition-colors p-4"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <div className="flex items-center justify-between flex-1">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "text-sm font-semibold",
+                        t.type === 'income'
+                          ? 'text-green-600 dark:text-green-500'
+                          : 'text-red-600 dark:text-red-500'
+                      )}>
+                        {t.amount.toLocaleString('en-IN', { 
+                          style: 'currency', 
+                          currency: 'INR',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0
+                        })}
+                      </span>
+                      <span className={cn(
+                        "px-2 py-1 rounded-full text-xs font-medium",
+                        t.type === 'income' 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
+                      )}>
                         {t.type.charAt(0).toUpperCase() + t.type.slice(1)}
                       </span>
-                    </TableCell>
-                    <TableCell className="p-2 text-xs sm:p-4 sm:text-sm">{t.category}</TableCell>
-                    <TableCell className={`p-2 text-xs sm:p-4 sm:text-sm font-semibold ${t.type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-                      {t.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                    </TableCell>
-                    <TableCell className="p-2 text-xs sm:p-4 sm:text-sm text-muted-foreground max-w-[100px] sm:max-w-xs truncate">{t.description || '-'}</TableCell>
-                    {/* <TableCell>
-                      <Button variant="ghost" size="icon" className="h-8 w-8"><Edit size={16} /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 size={16} /></Button>
-                    </TableCell> */}
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                  No transactions found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                    </div>
+                    <div className="mt-1">
+                      <span className="text-sm font-medium">{t.category}</span>
+                      {t.description && (
+                        <p className="text-sm text-muted-foreground truncate max-w-[250px]">
+                          {t.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">
+                      {format(new Date(t.date), "MMM dd, yyyy")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="h-32 flex items-center justify-center text-muted-foreground">
+            No transactions found
+          </div>
+        )}
       </div>
     </div>
   );

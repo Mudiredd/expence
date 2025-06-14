@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { TransactionsTable } from '@/components/transactions/TransactionsTable';
+import TransactionsPageClient from './page-client';
 
 export const metadata: Metadata = {
   title: 'Transaction History | Vishnu Finance Tracker',
 };
 
 export default function TransactionsPage() {
-  return <TransactionsTable />;
+  return <TransactionsPageClient />;
 }
