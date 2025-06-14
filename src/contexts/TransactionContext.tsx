@@ -1,4 +1,3 @@
-
 "use client";
 import type { FC, ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -12,11 +11,16 @@ import {
   getDocs,
   Timestamp,
   orderBy,
+  doc,
+  deleteDoc,
+  updateDoc,
 } from 'firebase/firestore';
 
 interface TransactionContextType {
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'userId'>) => Promise<void>;
+  deleteTransaction: (transactionId: string) => Promise<void>;
+  editTransaction: (transactionId: string, updates: Partial<Omit<Transaction, 'id' | 'userId'>>) => Promise<void>;
   loading: boolean;
 }
 
@@ -111,8 +115,50 @@ export const TransactionProvider: FC<{ children: ReactNode }> = ({ children }) =
     [currentUser, db] // addTransaction depends on currentUser and db
   );
 
+  const deleteTransaction = useCallback(
+    async (transactionId: string) => {
+      if (!currentUser) {
+        console.error("No user logged in to delete transaction");
+        return;
+      }
+      try {
+        const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transactionId);
+        await deleteDoc(transactionRef);
+        setTransactions(prev => prev.filter(t => t.id !== transactionId));
+      } catch (error) {
+        console.error("Error deleting transaction:", error);
+        throw error;
+      }
+    },
+    [currentUser]
+  );
+
+  const editTransaction = useCallback(
+    async (transactionId: string, updates: Partial<Omit<Transaction, 'id' | 'userId'>>) => {
+      if (!currentUser) {
+        console.error("No user logged in to edit transaction");
+        return;
+      }
+      try {
+        const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', transactionId);
+        await updateDoc(transactionRef, updates);
+        setTransactions(prev =>
+          prev.map(t =>
+            t.id === transactionId
+              ? { ...t, ...updates }
+              : t
+          )
+        );
+      } catch (error) {
+        console.error("Error editing transaction:", error);
+        throw error;
+      }
+    },
+    [currentUser]
+  );
+
   return (
-    <TransactionContext.Provider value={{ transactions, addTransaction, loading }}>
+    <TransactionContext.Provider value={{ transactions, addTransaction, deleteTransaction, editTransaction, loading }}>
       {children}
     </TransactionContext.Provider>
   );

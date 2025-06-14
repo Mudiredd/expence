@@ -1,4 +1,3 @@
-
 "use client";
 import type { FC } from 'react';
 import { useState } from 'react';
@@ -15,9 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useTransactions } from '@/contexts/TransactionContext';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, CheckCircle, IndianRupee } from 'lucide-react'; // Changed CircleDollarSign to IndianRupee
+import { CalendarIcon, CheckCircle, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Transaction, TransactionType } from '@/types';
 
 const transactionFormSchema = z.object({
   type: z.enum(['income', 'expense'], { required_error: "Transaction type is required." }),
@@ -29,46 +29,81 @@ const transactionFormSchema = z.object({
 
 type TransactionFormData = z.infer<typeof transactionFormSchema>;
 
-const defaultCategories = {
+const defaultCategories: Record<TransactionType, string[]> = {
   income: ["Salary", "Freelance", "Investment", "Bonus", "Gift", "Other"],
   expense: ["Food", "Transport", "Housing", "Utilities", "Entertainment", "Healthcare", "Shopping", "Education", "Other"],
 };
 
-export const TransactionForm: FC = () => {
-  const { addTransaction } = useTransactions();
+interface TransactionFormProps {
+  initialData?: Transaction;
+  onCancel?: () => void;
+}
+
+export const TransactionForm: FC<TransactionFormProps> = ({
+  initialData,
+  onCancel
+}) => {
+  const { addTransaction, editTransaction } = useTransactions();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const { control, handleSubmit, register, watch, reset, formState: { errors } } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionFormSchema),
-    defaultValues: {
+    defaultValues: initialData ? {
+      type: initialData.type,
+      category: initialData.category,
+      amount: initialData.amount,
+      date: new Date(initialData.date),
+      description: initialData.description || '',
+    } : {
       type: 'expense',
-      category: '', // Initialize category
-      amount: '' as unknown as number, // Initialize amount for controlled input, Zod will coerce
+      category: '',
+      amount: '' as unknown as number,
       date: new Date(),
-      description: '', // Initialize description
+      description: '',
     }
   });
 
   const transactionType = watch('type');
 
-  const onSubmit = (data: TransactionFormData) => {
+  const handleFormSubmit = async (data: TransactionFormData) => {
     setIsLoading(true);
     try {
-      addTransaction({
-        ...data,
-        date: format(data.date, 'yyyy-MM-dd'), // Store date as string
-      });
-      toast({
-        title: "Transaction Added",
-        description: `${data.type === 'income' ? 'Income' : 'Expense'} of ${data.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} recorded.`,
-        action: <CheckCircle className="text-green-500" />,
-      });
-      reset(); // Reset form after successful submission
+      const formattedDate = format(data.date, 'yyyy-MM-dd');
+      const transactionData = {
+        type: data.type,
+        category: data.category,
+        amount: data.amount,
+        date: formattedDate,
+        description: data.description,
+      };
+
+      if (initialData?.id) {
+        await editTransaction(initialData.id, transactionData);
+        toast({
+          title: "Transaction Updated",
+          description: `${data.type === 'income' ? 'Income' : 'Expense'} of ${data.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} updated.`,
+          action: <CheckCircle className="text-green-500" />,
+        });
+      } else {
+        await addTransaction(transactionData);
+        toast({
+          title: "Transaction Added",
+          description: `${data.type === 'income' ? 'Income' : 'Expense'} of ${data.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} recorded.`,
+          action: <CheckCircle className="text-green-500" />,
+        });
+        reset();
+      }
+      
+      if (onCancel) {
+        onCancel();
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add transaction. Please try again.",
+        description: initialData 
+          ? "Failed to update transaction. Please try again."
+          : "Failed to add transaction. Please try again.",
         variant: "destructive",
       });
       console.error(error);
@@ -81,13 +116,17 @@ export const TransactionForm: FC = () => {
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
       <CardHeader>
         <div className="flex items-center space-x-2 mb-2">
-            <IndianRupee className="h-8 w-8 text-primary" /> {/* Changed Icon Here */}
-            <CardTitle className="text-2xl font-headline">Record Transaction</CardTitle>
+          <IndianRupee className="h-8 w-8 text-primary" />
+          <CardTitle className="text-2xl font-headline">
+            {initialData ? 'Edit Transaction' : 'Record Transaction'}
+          </CardTitle>
         </div>
-        <CardDescription>Add a new income or expense to your records.</CardDescription>
+        <CardDescription>
+          {initialData ? 'Update your transaction details below.' : 'Add a new income or expense to your records.'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Controller
               name="type"
@@ -184,9 +223,16 @@ export const TransactionForm: FC = () => {
             {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
           </div>
 
-          <Button type="submit" className="w-full md:w-auto text-base py-3" disabled={isLoading}>
-            {isLoading ? "Adding..." : "Add Transaction"}
-          </Button>
+          <div className="flex justify-end gap-4">
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" className="w-full md:w-auto text-base py-3" disabled={isLoading}>
+              {isLoading ? "Saving..." : initialData ? "Save Changes" : "Add Transaction"}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

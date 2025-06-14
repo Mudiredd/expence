@@ -1,7 +1,6 @@
-
 "use client";
 import type { FC } from 'react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -25,6 +24,27 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { DateRange } from "react-day-picker"
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { TransactionForm } from './TransactionForm';
+import { Badge } from "@/components/ui/badge";
 
 type SortKey = keyof Transaction | '';
 type SortOrder = 'asc' | 'desc';
@@ -32,14 +52,16 @@ type SortOrder = 'asc' | 'desc';
 const ALL_CATEGORIES_VALUE = "_all_";
 
 export const TransactionsTable: FC = () => {
-  const { transactions, loading } = useTransactions();
+  const { transactions, loading, deleteTransaction, editTransaction } = useTransactions();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
   const [filterCategory, setFilterCategory] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const categories = useMemo(() => {
     const uniqueCategories = new Set(transactions.map(t => t.category));
@@ -70,18 +92,32 @@ export const TransactionsTable: FC = () => {
     if (dateRange?.to) {
       processedTransactions = processedTransactions.filter(t => new Date(t.date) <= dateRange.to!);
     }
-
-
     if (sortKey) {
       processedTransactions.sort((a, b) => {
         const valA = a[sortKey as keyof Transaction];
         const valB = b[sortKey as keyof Transaction];
 
-        let comparison = 0;
-        if (valA > valB) comparison = 1;
-        else if (valA < valB) comparison = -1;
+        // Handle numeric comparisons (amount)
+        if (sortKey === 'amount') {
+          return sortOrder === 'asc' 
+            ? a.amount - b.amount 
+            : b.amount - a.amount;
+        }
+
+        // Handle date comparisons
+        if (sortKey === 'date') {
+          return sortOrder === 'asc'
+            ? new Date(a.date).getTime() - new Date(b.date).getTime()
+            : new Date(b.date).getTime() - new Date(a.date).getTime();
+        }
+
+        // Handle string comparisons (type, category, description)
+        const stringA = String(valA || '');
+        const stringB = String(valB || '');
         
-        return sortOrder === 'asc' ? comparison : -comparison;
+        return sortOrder === 'asc'
+          ? stringA.localeCompare(stringB)
+          : stringB.localeCompare(stringA);
       });
     }
     return processedTransactions;
@@ -105,18 +141,57 @@ export const TransactionsTable: FC = () => {
     </TableHead>
   );
 
+  const handleDelete = async (transactionId: string) => {
+    try {
+      await deleteTransaction(transactionId);
+      toast({
+        title: "Transaction Deleted",
+        description: "The transaction has been successfully deleted.",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  const handleEdit = async (formData: Omit<Transaction, 'id' | 'userId'>) => {
+    if (!editingTransaction) return;
+    
+    try {
+      await editTransaction(editingTransaction.id, {
+        type: formData.type,
+        category: formData.category,
+        amount: formData.amount,
+        date: formData.date,
+        description: formData.description,
+      });
+      setIsEditDialogOpen(false);
+      setEditingTransaction(null);
+      toast({
+        title: "Transaction Updated",
+        description: "The transaction has been successfully updated.",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update transaction. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
-          <Skeleton className="h-10 w-full md:w-1/3" />
-          <Skeleton className="h-10 w-full md:w-1/4" />
-          <Skeleton className="h-10 w-full md:w-1/4" />
-          <Skeleton className="h-10 w-full md:w-1/6" />
+      <div className="w-full space-y-4">
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} className="w-full h-16" />
+          ))}
         </div>
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
-        ))}
       </div>
     );
   }
@@ -198,7 +273,7 @@ export const TransactionsTable: FC = () => {
           </Popover>
       </div>
 
-      <div className="rounded-lg border shadow-sm overflow-hidden bg-card">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -207,42 +282,92 @@ export const TransactionsTable: FC = () => {
               <SortableHeader columnKey="category">Category</SortableHeader>
               <SortableHeader columnKey="amount">Amount</SortableHeader>
               <TableHead>Description</TableHead>
-              {/* <TableHead>Actions</TableHead> */}
+              <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAndSortedTransactions.length > 0 ? (
-              filteredAndSortedTransactions.map(t => (
-                <TableRow key={t.id} className="hover:bg-muted/20 transition-colors">
-                  <TableCell>{format(new Date(t.date), "MMM dd, yyyy")}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      t.type === 'income' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
-                    }`}>
-                      {t.type.charAt(0).toUpperCase() + t.type.slice(1)}
-                    </span>
-                  </TableCell>
-                  <TableCell>{t.category}</TableCell>
-                  <TableCell className={`font-semibold ${t.type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-                    {t.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground max-w-xs truncate">{t.description || '-'}</TableCell>
-                  {/* <TableCell>
-                    <Button variant="ghost" size="icon" className="h-8 w-8"><Edit size={16} /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 size={16} /></Button>
-                  </TableCell> */}
-                </TableRow>
-              ))
-            ) : (
+            {filteredAndSortedTransactions.map((transaction) => (
+              <TableRow key={transaction.id}>
+                <TableCell>{format(new Date(transaction.date), 'MMM dd, yyyy')}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    transaction.type === 'income' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
+                  }`}>
+                    {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                  </span>
+                </TableCell>
+                <TableCell>{transaction.category}</TableCell>
+                <TableCell className={`font-semibold ${transaction.type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                  {transaction.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                </TableCell>
+                <TableCell className="text-muted-foreground max-w-xs truncate">{transaction.description || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingTransaction(transaction);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this transaction? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(transaction.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredAndSortedTransactions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No transactions found.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </div>
+      </div>      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+            <DialogDescription>
+              Make changes to your transaction here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          {editingTransaction && (
+            <div className="mt-4">
+              <TransactionForm
+                initialData={editingTransaction}
+                onCancel={() => setIsEditDialogOpen(false)}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
