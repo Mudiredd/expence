@@ -85,33 +85,28 @@ export const TransactionsTable: FC = () => {
       processedTransactions.sort((a, b) => {
         const valA = a[sortKey as keyof Transaction];
         const valB = b[sortKey as keyof Transaction];
-
         let comparison = 0;
 
-        // Handle cases where one or both values might be undefined
         if (valA === undefined && valB === undefined) {
           comparison = 0;
-        } else if (valA === undefined) { // valA is undefined, valB is defined
-          comparison = 1; // Undefined values go last in ascending sort
-        } else if (valB === undefined) { // valB is undefined, valA is defined
-          comparison = -1; // Undefined values go last in ascending sort (so defined valA comes first)
+        } else if (valA === undefined) {
+          comparison = 1; // undefined values go last
+        } else if (valB === undefined) {
+          comparison = -1; // undefined values go last
         } else {
-          // Both values are defined, proceed with type-specific comparison
           if (sortKey === 'amount') {
             comparison = (valA as number) - (valB as number);
           } else if (sortKey === 'date') {
-            // Ensure dates are valid before comparing
             const dateA = new Date(valA as string).getTime();
             const dateB = new Date(valB as string).getTime();
             if (isNaN(dateA) && isNaN(dateB)) comparison = 0;
-            else if (isNaN(dateA)) comparison = 1; // Invalid dates go last
-            else if (isNaN(dateB)) comparison = -1; // Invalid dates go last
+            else if (isNaN(dateA)) comparison = 1;
+            else if (isNaN(dateB)) comparison = -1;
             else comparison = dateA - dateB;
-          } else { // For string types (type, category, description)
+          } else {
             comparison = String(valA).localeCompare(String(valB));
           }
         }
-        
         return sortOrder === 'asc' ? comparison : -comparison;
       });
     }
@@ -128,7 +123,10 @@ export const TransactionsTable: FC = () => {
   };
   
   const SortableHeader: FC<{ columnKey: SortKey; children: React.ReactNode }> = ({ columnKey, children }) => (
-    <TableHead onClick={() => handleSort(columnKey)} className="cursor-pointer hover:bg-muted/50 text-xs sm:text-sm">
+    <TableHead 
+      onClick={() => handleSort(columnKey)} 
+      className="cursor-pointer hover:bg-muted/50 px-2 h-10 text-xs sm:px-4 sm:h-12 sm:text-sm"
+    >
       <div className="flex items-center">
         {children}
         {sortKey === columnKey && <ArrowUpDown className="ml-2 h-4 w-4" />}
@@ -237,7 +235,7 @@ export const TransactionsTable: FC = () => {
               <SortableHeader columnKey="type">Type</SortableHeader>
               <SortableHeader columnKey="category">Category</SortableHeader>
               <SortableHeader columnKey="amount">Amount</SortableHeader>
-              <TableHead className="text-xs sm:text-sm">Description</TableHead>
+              <TableHead className="px-2 h-10 text-xs sm:px-4 sm:h-12 sm:text-sm">Description</TableHead>
               {/* <TableHead>Actions</TableHead> */}
             </TableRow>
           </TableHeader>
@@ -245,25 +243,24 @@ export const TransactionsTable: FC = () => {
             {filteredAndSortedTransactions.length > 0 ? (
               filteredAndSortedTransactions.map(t => {
                 const dateObj = new Date(t.date);
-                // Check if dateObj is a valid date
                 const displayDate = !isNaN(dateObj.getTime()) 
                                     ? format(dateObj, "MMM dd, yyyy") 
                                     : "Invalid Date";
                 return (
                   <TableRow key={t.id} className="hover:bg-muted/20 transition-colors">
-                    <TableCell className="text-xs sm:text-sm">{displayDate}</TableCell>
-                    <TableCell>
+                    <TableCell className="p-2 text-xs sm:p-4 sm:text-sm">{displayDate}</TableCell>
+                    <TableCell className="p-2 sm:p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         t.type === 'income' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
                       }`}>
                         {t.type.charAt(0).toUpperCase() + t.type.slice(1)}
                       </span>
                     </TableCell>
-                    <TableCell className="text-xs sm:text-sm">{t.category}</TableCell>
-                    <TableCell className={`text-xs sm:text-sm font-semibold ${t.type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                    <TableCell className="p-2 text-xs sm:p-4 sm:text-sm">{t.category}</TableCell>
+                    <TableCell className={`p-2 text-xs sm:p-4 sm:text-sm font-semibold ${t.type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
                       {t.amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                     </TableCell>
-                    <TableCell className="text-xs sm:text-sm text-muted-foreground max-w-xs truncate">{t.description || '-'}</TableCell>
+                    <TableCell className="p-2 text-xs sm:p-4 sm:text-sm text-muted-foreground max-w-[100px] sm:max-w-xs truncate">{t.description || '-'}</TableCell>
                     {/* <TableCell>
                       <Button variant="ghost" size="icon" className="h-8 w-8"><Edit size={16} /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 size={16} /></Button>
